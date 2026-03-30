@@ -1,6 +1,6 @@
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import { Sidebar } from '@/components/layout/Sidebar'
+import { AppShell } from '@/components/layout/AppShell'
 import { db } from '@/lib/db'
 import { lines, users } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
@@ -27,11 +27,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="app-shell">
-      <Sidebar user={session.user} allLines={allLines} />
-      <main className="app-main">
-        {children}
-      </main>
-    </div>
+    <AppShell user={session.user} allLines={allLines}>
+      {children}
+    </AppShell>
   )
 }

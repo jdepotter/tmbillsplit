@@ -59,6 +59,59 @@ body {
   width: 220px;
 }
 
+.sidebar-desktop {
+  display: block;
+}
+
+.mobile-topbar {
+  display: none;
+}
+
+.mobile-menu-button {
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg2);
+  padding: 6px 7px;
+  cursor: pointer;
+}
+
+.mobile-menu-button span {
+  display: block;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--text1);
+}
+
+.mobile-topbar-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.mobile-topbar-logo {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: var(--mg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.sidebar-drawer {
+  display: none;
+}
+
 .stat-grid {
   display: grid;
   gap: 14px;
@@ -88,22 +141,69 @@ body {
 }
 
 @media (max-width: 768px) {
-  .app-shell {
-    flex-direction: column;
-    height: auto;
-    min-height: 0;
-  }
-
-  .app-main {
-    min-height: calc(100vh - 56px);
+  .two-col-grid {
+    grid-template-columns: 1fr;
   }
 
   .sidebar {
-    width: 100%;
+    width: 220px;
   }
 
-  .two-col-grid {
-    grid-template-columns: 1fr;
+  .sidebar-desktop {
+    display: none;
+  }
+
+  .mobile-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg0);
+    position: sticky;
+    top: 0;
+    z-index: 30;
+  }
+
+  .sidebar-drawer {
+    display: block;
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 40;
+  }
+
+  .sidebar-drawer-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    transition: opacity 0.15s ease-out;
+  }
+
+  .sidebar-drawer-panel {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 80%;
+    max-width: 280px;
+    background: var(--bg1);
+    border-right: 1px solid var(--border);
+    transform: translateX(-100%);
+    transition: transform 0.2s ease-out;
+  }
+
+  .sidebar-drawer--open {
+    pointer-events: auto;
+  }
+
+  .sidebar-drawer--open .sidebar-drawer-backdrop {
+    opacity: 1;
+  }
+
+  .sidebar-drawer--open .sidebar-drawer-panel {
+    transform: translateX(0);
   }
 }
 
