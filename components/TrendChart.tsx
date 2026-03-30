@@ -1,5 +1,6 @@
-'use client'
+"use client"
 
+import { useEffect, useState } from 'react'
 import { MONTH_NAMES } from '@/lib/utils/dates'
 
 export interface TrendPoint {
@@ -22,6 +23,15 @@ const SERIES = [
 ]
 
 export function TrendChart({ data, height = 180 }: Props) {
+  const [mounted, setMounted] = useState(false)
+
+  // Avoid server/client SVG mismatches by only rendering after mount
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) return null
+
   if (data.length < 2) {
     return (
       <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text3)', fontSize: '12px' }}>

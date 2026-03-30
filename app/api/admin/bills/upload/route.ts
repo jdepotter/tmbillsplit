@@ -56,8 +56,8 @@ export async function POST(req: NextRequest) {
   // Store PDF — Vercel Blob in production, local filesystem in dev
   const blobName = `bills/${year}-${String(month).padStart(2, '0')}.pdf`
   let rawFileUrl: string | null = null
-  if (process.env.BLOB_READ_WRITE_TOKEN) {
-    const blob = await put(blobName, fileBuffer, { access: 'public', addRandomSuffix: false })
+  if (process.env.PROD_READ_WRITE_TOKEN) {
+    const blob = await put(blobName, fileBuffer, { access: 'public', addRandomSuffix: false, token: process.env.PROD_READ_WRITE_TOKEN })
     rawFileUrl = blob.url
   } else {
     const localPath = join(process.cwd(), 'public', blobName)

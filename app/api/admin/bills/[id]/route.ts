@@ -56,8 +56,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const blobName = `bills/${bill.periodYear}-${String(bill.periodMonth).padStart(2, '0')}.pdf`
   let rawFileUrl: string | null = bill.rawFileUrl
-  if (process.env.BLOB_READ_WRITE_TOKEN) {
-    const blob = await put(blobName, fileBuffer, { access: 'public', addRandomSuffix: false })
+  if (process.env.PROD_READ_WRITE_TOKEN) {
+    const blob = await put(blobName, fileBuffer, { access: 'public', addRandomSuffix: false, token: process.env.PROD_READ_WRITE_TOKEN })
     rawFileUrl = blob.url
   } else {
     const localPath = join(process.cwd(), 'public', blobName)
