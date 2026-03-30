@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(grep -r NextAuthRequest /Users/jeromedepotter/tm/node_modules/next-auth/dist --include=*.d.ts -l)",
-      "Bash(grep -r NextAuthRequest /Users/jeromedepotter/tm/node_modules/next-auth --include=*.d.ts -l)"
+      "Bash(grep -r NextAuthRequest /Users/jeromedepotter/tm/node_modules/next-auth --include=*.d.ts -l)",
+      "Bash(PGPASSWORD=billsplit psql -h localhost -p 5433 -U billsplit -d billsplit -c \"SELECT id, name, email, password_hash, can_login, role, line_id, household_id, can_see_household FROM users;\")",
+      "Bash(npx tsx -e \":*)",
+      "Bash(grep -n \"access: ''public''\" /Users/jeromedepotter/tm/app/api/admin/bills/upload/route.ts /Users/jeromedepotter/tm/app/api/admin/bills/[id]/route.ts)"
     ]
   }
 }
