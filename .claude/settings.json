@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -r NextAuthRequest /Users/jeromedepotter/tm/node_modules/next-auth/dist --include=*.d.ts -l)",
+      "Bash(grep -r NextAuthRequest /Users/jeromedepotter/tm/node_modules/next-auth --include=*.d.ts -l)"
+    ]
+  }
+}

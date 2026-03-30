@@ -124,9 +124,9 @@ export default async function UserDashboardPage({ searchParams }: Props) {
         trendData.push({
           month: b.periodMonth,
           year: b.periodYear,
-          planShare: rows.reduce((s, r) => s + parseFloat(r.planShare), 0),
-          devicePayment: rows.reduce((s, r) => s + parseFloat(r.devicePayment), 0),
-          extraCharges: rows.reduce((s, r) => s + parseFloat(r.extraCharges), 0),
+          planShare: rows.reduce((s: number, r: typeof rows[number]) => s + parseFloat(r.planShare), 0),
+          devicePayment: rows.reduce((s: number, r: typeof rows[number]) => s + parseFloat(r.devicePayment), 0),
+          extraCharges: rows.reduce((s: number, r: typeof rows[number]) => s + parseFloat(r.extraCharges), 0),
         })
       }
     }
