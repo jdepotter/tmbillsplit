@@ -111,12 +111,12 @@ export function AdminDashboardClient({ month, year, view, bill, lineData, recent
   return (
     <div>
       {/* Topbar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 28px', borderBottom: '1px solid var(--border)', background: 'var(--bg0)', position: 'sticky', top: 0, zIndex: 10 }}>
+      <div className="page-topbar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 28px', borderBottom: '1px solid var(--border)', background: 'var(--bg0)', position: 'sticky', top: 0, zIndex: 10 }}>
         <div>
           <div style={{ fontSize: '16px', fontWeight: 600, letterSpacing: '-0.3px' }}>Global Dashboard</div>
           <div style={{ fontSize: '12px', color: 'var(--text3)', marginTop: '1px' }}>All lines</div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div className="page-topbar-filters" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           {/* View tabs */}
           <div style={{ display: 'flex', background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: '10px', padding: '3px', gap: '2px' }}>
             {(['monthly', 'yearly'] as const).map(v => (

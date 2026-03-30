@@ -141,6 +141,19 @@ body {
 }
 
 @media (max-width: 768px) {
+  .page-topbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .page-topbar-filters {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
   .two-col-grid {
     grid-template-columns: 1fr;
   }

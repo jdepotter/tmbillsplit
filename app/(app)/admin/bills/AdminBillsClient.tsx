@@ -215,7 +215,7 @@ export function AdminBillsClient({ bills }: Props) {
         </a>
       </div>
 
-      <div className="two-col-grid" style={{ padding: '24px 28px', alignItems: 'start', gridTemplateColumns: '360px 1fr' }}>
+      <div className="two-col-grid" style={{ padding: '24px 28px', alignItems: 'start' }}>
 
         {/* Upload card */}
         <div style={{ background: 'var(--bg1)', border: '1px solid var(--border)', borderRadius: '14px', overflow: 'hidden' }}>

@@ -126,7 +126,7 @@ export function UserDashboardClient({ month, year, view, bill, myCharges, househ
   return (
     <div>
       {/* Topbar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 28px', borderBottom: '1px solid var(--border)', background: 'var(--bg0)', position: 'sticky', top: 0, zIndex: 10 }}>
+      <div className="page-topbar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 28px', borderBottom: '1px solid var(--border)', background: 'var(--bg0)', position: 'sticky', top: 0, zIndex: 10 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <div style={{ fontSize: '16px', fontWeight: 600, letterSpacing: '-0.3px' }}>
@@ -137,7 +137,7 @@ export function UserDashboardClient({ month, year, view, bill, myCharges, househ
             {viewingName ? 'Household member' : isHouseholdView ? 'All members' : 'Your charges'}
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div className="page-topbar-filters" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           {/* View tabs */}
           <div style={{ display: 'flex', background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: '10px', padding: '3px', gap: '2px' }}>
             {(['monthly', 'yearly'] as const).map(v => (
