@@ -180,16 +180,16 @@ export function Sidebar({ user, allLines = [] }: SidebarProps) {
 
   return (
     <aside
+      className="sidebar"
       style={{
-        width: '220px',
-        flexShrink: 0,
-        background: 'var(--bg1)',
-        borderRight: '1px solid var(--border)',
-        display: 'flex',
-        flexDirection: 'column',
-        padding: '20px 0',
-        overflowY: 'auto',
-      }}
+    flexShrink: 0,
+    background: 'var(--bg1)',
+    borderRight: '1px solid var(--border)',
+    display: 'flex',
+    flexDirection: 'column',
+    padding: '20px 0',
+    overflowY: 'auto',
+        }}
     >
       {/* Logo */}
       <div style={{ padding: '0 20px 24px', borderBottom: '1px solid var(--border)', marginBottom: '16px' }}>

@@ -215,7 +215,7 @@ export function AdminBillsClient({ bills }: Props) {
         </a>
       </div>
 
-      <div style={{ padding: '24px 28px', display: 'grid', gridTemplateColumns: '440px 1fr', gap: '20px', alignItems: 'start' }}>
+      <div className="two-col-grid" style={{ padding: '24px 28px', alignItems: 'start' }}>
 
         {/* Upload card */}
         <div style={{ background: 'var(--bg1)', border: '1px solid var(--border)', borderRadius: '14px', overflow: 'hidden' }}>
@@ -376,16 +376,17 @@ export function AdminBillsClient({ bills }: Props) {
           {bills.length === 0 ? (
             <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text3)', fontSize: '13px' }}>No bills uploaded yet.</div>
           ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr>
-                  {['Period', 'Total', 'Plan cost', 'Lines', 'Shares', 'Status', 'Uploaded', ''].map((h) => (
-                    <th key={h} style={{ fontSize: '10px', color: 'var(--text3)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', padding: '10px 20px', textAlign: 'left', borderBottom: '1px solid var(--border)', background: 'var(--bg2)' }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {bills.map((b) => (
+            <div className="table-scroll">
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr>
+                    {['Period', 'Total', 'Plan cost', 'Lines', 'Shares', 'Status', 'Uploaded', ''].map((h) => (
+                      <th key={h} style={{ fontSize: '10px', color: 'var(--text3)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', padding: '10px 20px', textAlign: 'left', borderBottom: '1px solid var(--border)', background: 'var(--bg2)' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {bills.map((b) => (
                   <tr key={b.id} style={{ borderBottom: '1px solid var(--border)' }}>
                     <td style={{ padding: '12px 20px', fontSize: '13px', fontWeight: 500 }}>
                       <Link href={`/admin/bills/${b.id}`} style={{ color: 'var(--text1)', textDecoration: 'none' }}>
@@ -430,42 +431,47 @@ export function AdminBillsClient({ bills }: Props) {
                       <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
                         {b.rawFileUrl && (
                           <a
-                            href={b.rawFileUrl}
-                            download={`SummaryBill-${MONTH_NAMES[b.periodMonth - 1]}-${b.periodYear}.pdf`}
-                            style={{ background: 'var(--bg2)', color: 'var(--text2)', border: '1px solid var(--border)', borderRadius: '6px', padding: '4px 10px', fontSize: '12px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                            href={`/api/admin/bills/${b.id}/pdf`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title="Download PDF"
+                            style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: '6px', padding: '5px 7px', cursor: 'pointer', color: 'var(--text2)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}
                           >
-                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                            PDF
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                           </a>
                         )}
                         {b.rawFileUrl && (
                           <button
                             onClick={() => handleReparse(b.id)}
                             disabled={reparsingId === b.id}
-                            style={{ background: 'var(--bg2)', color: 'var(--text2)', border: '1px solid var(--border)', borderRadius: '6px', padding: '4px 10px', fontSize: '12px', cursor: 'pointer', opacity: reparsingId === b.id ? 0.5 : 1 }}
+                            title="Reparse"
+                            style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: '6px', padding: '5px 7px', cursor: 'pointer', color: 'var(--text2)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', opacity: reparsingId === b.id ? 0.5 : 1 }}
                           >
-                            {reparsingId === b.id ? 'Parsing…' : 'Reparse'}
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
                           </button>
                         )}
                         <button
                           onClick={() => triggerReparse(b.id)}
                           disabled={reparsingId === b.id}
-                          style={{ background: 'var(--bg2)', color: 'var(--text2)', border: '1px solid var(--border)', borderRadius: '6px', padding: '4px 10px', fontSize: '12px', cursor: 'pointer', opacity: reparsingId === b.id ? 0.5 : 1 }}
+                          title="Re-upload PDF"
+                          style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: '6px', padding: '5px 7px', cursor: 'pointer', color: 'var(--text2)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', opacity: reparsingId === b.id ? 0.5 : 1 }}
                         >
-                          {reparsingId === b.id ? 'Parsing…' : 'Re-upload'}
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                         </button>
                         <button
                           onClick={() => handleDelete(b.id, `${MONTH_NAMES[b.periodMonth - 1]} ${b.periodYear}`)}
-                          style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--red)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '6px', padding: '4px 10px', fontSize: '12px', cursor: 'pointer' }}
+                          title="Delete"
+                          style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: '6px', padding: '5px 7px', cursor: 'pointer', color: 'var(--text2)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                         >
-                          Delete
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
                         </button>
                       </div>
                     </td>
                   </tr>
                 ))}
-              </tbody>
-            </table>
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </div>

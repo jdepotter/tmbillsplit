@@ -6,7 +6,10 @@
       "Bash(PGPASSWORD=billsplit psql -h localhost -p 5433 -U billsplit -d billsplit -c \"SELECT id, name, email, password_hash, can_login, role, line_id, household_id, can_see_household FROM users;\")",
       "Bash(npx tsx -e \":*)",
       "Bash(grep -n \"access: ''public''\" /Users/jeromedepotter/tm/app/api/admin/bills/upload/route.ts /Users/jeromedepotter/tm/app/api/admin/bills/[id]/route.ts)",
-      "Bash(grep -r \"GetCommandOptions\\\\|GetBlobResult\" /Users/jeromedepotter/tm/node_modules/@vercel/blob/dist/*.d.ts)"
+      "Bash(grep -r \"GetCommandOptions\\\\|GetBlobResult\" /Users/jeromedepotter/tm/node_modules/@vercel/blob/dist/*.d.ts)",
+      "Bash(ls /Users/jeromedepotter/tm/app/api/admin/bills/[id]/)",
+      "Bash(node -e \"const r = new Response\\(new Uint8Array\\([1,2,3]\\)\\); console.log\\(''ok''\\)\")",
+      "Bash(node -e \"const {tsconfig} = require\\(''/Users/jeromedepotter/tm/tsconfig.json''\\); console.log\\(tsconfig\\)\")"
     ],
     "additionalDirectories": [
       "/Users/jeromedepotter/tm/app/api/admin/bills/[id]"

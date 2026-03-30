@@ -27,9 +27,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div style={{ display: 'flex', height: '100vh', minHeight: '600px' }}>
+    <div className="app-shell">
       <Sidebar user={session.user} allLines={allLines} />
-      <main style={{ flex: 1, overflowY: 'auto', background: 'var(--bg0)' }}>
+      <main className="app-main">
         {children}
       </main>
     </div>

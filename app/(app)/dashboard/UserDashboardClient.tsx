@@ -168,7 +168,7 @@ export function UserDashboardClient({ month, year, view, bill, myCharges, househ
         {/* YEARLY VIEW */}
         {view === 'yearly' && (
           <>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px', marginBottom: '24px' }}>
+            <div className="stat-grid">
               <div style={{ background: 'linear-gradient(135deg, rgba(226,0,116,0.08) 0%, var(--bg1) 100%)', border: '1px solid var(--border-mg)', borderRadius: '12px', padding: '16px 18px', position: 'relative', overflow: 'hidden' }}>
                 <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: '3px', background: 'var(--mg)' }} />
                 <div style={{ fontSize: '11px', color: 'var(--text3)', letterSpacing: '0.4px', marginBottom: '8px', fontWeight: 500, textTransform: 'uppercase' }}>{year} Total</div>
@@ -198,25 +198,27 @@ export function UserDashboardClient({ month, year, view, bill, myCharges, househ
 
             <div style={{ background: 'var(--bg1)', border: '1px solid var(--border)', borderRadius: '14px', overflow: 'hidden' }}>
               <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', fontSize: '13px', fontWeight: 600 }}>Monthly breakdown</div>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr>{['Month', 'Plan share', 'Equipment', 'Extras', 'Total'].map(h => (
-                    <th key={h} style={{ fontSize: '10px', color: 'var(--text3)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', padding: '10px 20px', textAlign: 'left', borderBottom: '1px solid var(--border)', background: 'var(--bg2)' }}>{h}</th>
-                  ))}</tr>
-                </thead>
-                <tbody>
-                  {trendData.map((d, i) => (
-                    <tr key={i} style={{ borderBottom: '1px solid var(--border)', cursor: 'pointer' }}
-                      onClick={() => router.push(buildUrl(d.month, d.year, 'monthly'))}>
-                      <td style={{ padding: '11px 20px', fontSize: '13px', fontWeight: 500 }}>{MONTH_NAMES[d.month - 1]} {d.year}</td>
-                      <td style={{ padding: '11px 20px', fontFamily: 'var(--mono)', fontSize: '13px', color: '#6366f1' }}>${d.planShare.toFixed(2)}</td>
-                      <td style={{ padding: '11px 20px', fontFamily: 'var(--mono)', fontSize: '13px', color: 'var(--amber)' }}>${d.devicePayment.toFixed(2)}</td>
-                      <td style={{ padding: '11px 20px', fontFamily: 'var(--mono)', fontSize: '13px', color: 'var(--mg)' }}>${d.extraCharges.toFixed(2)}</td>
-                      <td style={{ padding: '11px 20px', fontFamily: 'var(--mono)', fontSize: '13px', fontWeight: 600 }}>${(d.planShare + d.devicePayment + d.extraCharges).toFixed(2)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <div className="table-scroll">
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr>{['Month', 'Plan share', 'Equipment', 'Extras', 'Total'].map(h => (
+                      <th key={h} style={{ fontSize: '10px', color: 'var(--text3)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', padding: '10px 20px', textAlign: 'left', borderBottom: '1px solid var(--border)', background: 'var(--bg2)' }}>{h}</th>
+                    ))}</tr>
+                  </thead>
+                  <tbody>
+                    {trendData.map((d, i) => (
+                      <tr key={i} style={{ borderBottom: '1px solid var(--border)', cursor: 'pointer' }}
+                        onClick={() => router.push(buildUrl(d.month, d.year, 'monthly'))}>
+                        <td style={{ padding: '11px 20px', fontSize: '13px', fontWeight: 500 }}>{MONTH_NAMES[d.month - 1]} {d.year}</td>
+                        <td style={{ padding: '11px 20px', fontFamily: 'var(--mono)', fontSize: '13px', color: '#6366f1' }}>${d.planShare.toFixed(2)}</td>
+                        <td style={{ padding: '11px 20px', fontFamily: 'var(--mono)', fontSize: '13px', color: 'var(--amber)' }}>${d.devicePayment.toFixed(2)}</td>
+                        <td style={{ padding: '11px 20px', fontFamily: 'var(--mono)', fontSize: '13px', color: 'var(--mg)' }}>${d.extraCharges.toFixed(2)}</td>
+                        <td style={{ padding: '11px 20px', fontFamily: 'var(--mono)', fontSize: '13px', fontWeight: 600 }}>${(d.planShare + d.devicePayment + d.extraCharges).toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </>
         )}
@@ -239,7 +241,7 @@ export function UserDashboardClient({ month, year, view, bill, myCharges, househ
                   const device = householdLineData.reduce((s, r) => s + parseFloat(r.devicePayment), 0)
                   const extra = householdLineData.reduce((s, r) => s + parseFloat(r.extraCharges), 0)
                   return (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px', marginBottom: '20px' }}>
+                    <div className="stat-grid" style={{ marginBottom: '20px' }}>
                       <div style={{ background: 'linear-gradient(135deg, rgba(226,0,116,0.08) 0%, var(--bg1) 100%)', border: '1px solid var(--border-mg)', borderRadius: '12px', padding: '16px 18px', position: 'relative', overflow: 'hidden' }}>
                         <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: '3px', background: 'var(--mg)' }} />
                         <div style={{ fontSize: '11px', color: 'var(--text3)', letterSpacing: '0.4px', marginBottom: '8px', fontWeight: 500, textTransform: 'uppercase' }}>Household total</div>
@@ -263,14 +265,15 @@ export function UserDashboardClient({ month, year, view, bill, myCharges, househ
                 {/* Household member breakdown table */}
                 <div style={{ background: 'var(--bg1)', border: '1px solid var(--border)', borderRadius: '14px', overflow: 'hidden', marginBottom: '20px' }}>
                   <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', fontSize: '13px', fontWeight: 600 }}>Members</div>
-                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead>
-                      <tr>{['Name', 'Plan share', 'Equipment', 'Extras', 'Taxes', 'Total'].map(h => (
-                        <th key={h} style={{ fontSize: '10px', color: 'var(--text3)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', padding: '10px 20px', textAlign: 'left', borderBottom: '1px solid var(--border)', background: 'var(--bg2)' }}>{h}</th>
-                      ))}</tr>
-                    </thead>
-                    <tbody>
-                      {householdLineData.map((row) => (
+                  <div className="table-scroll">
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                      <thead>
+                        <tr>{['Name', 'Plan share', 'Equipment', 'Extras', 'Taxes', 'Total'].map(h => (
+                          <th key={h} style={{ fontSize: '10px', color: 'var(--text3)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px', padding: '10px 20px', textAlign: 'left', borderBottom: '1px solid var(--border)', background: 'var(--bg2)' }}>{h}</th>
+                        ))}</tr>
+                      </thead>
+                      <tbody>
+                        {householdLineData.map((row) => (
                         <tr
                           key={row.lineId}
                           style={{ borderBottom: '1px solid var(--border)', cursor: 'pointer' }}
@@ -302,8 +305,9 @@ export function UserDashboardClient({ month, year, view, bill, myCharges, househ
                           <td style={{ padding: '11px 20px', fontFamily: 'var(--mono)', fontSize: '13px', fontWeight: 600 }}>{fmt(row.totalDue)}</td>
                         </tr>
                       ))}
-                    </tbody>
-                  </table>
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
 
                 {/* Trend mini chart */}
@@ -322,7 +326,7 @@ export function UserDashboardClient({ month, year, view, bill, myCharges, househ
             )}
 
             {bill && !isHouseholdView && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', alignItems: 'start' }}>
+              <div className="two-col-grid" style={{ alignItems: 'start' }}>
                 {/* My charges */}
                 <div>
                   <div style={{ background: 'linear-gradient(135deg, rgba(226,0,116,0.08) 0%, var(--bg1) 100%)', border: '1px solid var(--border-mg)', borderRadius: '14px', padding: '24px', marginBottom: '14px' }}>
