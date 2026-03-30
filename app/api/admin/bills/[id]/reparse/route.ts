@@ -24,7 +24,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
 
   let pdfBase64: string
   if (process.env.PROD_READ_WRITE_TOKEN) {
-    const result = await get(bill.rawFileUrl, { token: process.env.PROD_READ_WRITE_TOKEN })
+    const result = await get(bill.rawFileUrl, { access: 'private', token: process.env.PROD_READ_WRITE_TOKEN })
     if (!result || result.statusCode !== 200) {
       return NextResponse.json({ error: 'Could not fetch stored PDF' }, { status: 500 })
     }
