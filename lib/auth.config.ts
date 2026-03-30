@@ -52,5 +52,5 @@ export const authConfig: NextAuthConfig = {
 // Edge/runtime-safe `auth` helper used by the Next.js proxy (formerly middleware).
 // This instance intentionally has no providers; the full Credentials provider
 // setup lives in `lib/auth.ts` for route handlers.
-export const { auth } = NextAuth(authConfig)
+export const { auth } = NextAuth({ ...authConfig, secret: process.env.AUTH_SECRET })
 
