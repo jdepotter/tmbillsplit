@@ -28,18 +28,6 @@ function looksLikePhone(raw: string) {
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   secret: process.env.AUTH_SECRET,
-  cookies: {
-    sessionToken: {
-      name: 'authjs.session-token',
-      options: {
-        httpOnly: true,
-        sameSite: 'lax' as const,
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 10 * 365 * 24 * 60 * 60,
-      },
-    },
-  },
   providers: [
     Credentials({
       credentials: {
