@@ -1,0 +1,1 @@
+ALTER TABLE "line_charges" ADD COLUMN "mid_cycle_charges" numeric(10, 2) DEFAULT '0' NOT NULL;

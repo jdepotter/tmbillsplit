@@ -1,0 +1,1 @@
+ALTER TABLE "bills" ADD COLUMN "raw_bill_data" jsonb;
