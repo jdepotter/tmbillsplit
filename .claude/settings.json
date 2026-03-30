@@ -7,6 +7,9 @@
       "Bash(npx tsx -e \":*)",
       "Bash(grep -n \"access: ''public''\" /Users/jeromedepotter/tm/app/api/admin/bills/upload/route.ts /Users/jeromedepotter/tm/app/api/admin/bills/[id]/route.ts)",
       "Bash(grep -r \"GetCommandOptions\\\\|GetBlobResult\" /Users/jeromedepotter/tm/node_modules/@vercel/blob/dist/*.d.ts)"
+    ],
+    "additionalDirectories": [
+      "/Users/jeromedepotter/tm/app/api/admin/bills/[id]"
     ]
   }
 }

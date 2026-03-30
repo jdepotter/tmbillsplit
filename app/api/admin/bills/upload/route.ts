@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
   const blobName = `bills/${year}-${String(month).padStart(2, '0')}.pdf`
   let rawFileUrl: string | null = null
   if (process.env.PROD_READ_WRITE_TOKEN) {
-    const blob = await put(blobName, fileBuffer, { access: 'private', addRandomSuffix: false, token: process.env.PROD_READ_WRITE_TOKEN })
+    const blob = await put(blobName, fileBuffer, { access: 'private', addRandomSuffix: false, allowOverwrite: true, token: process.env.PROD_READ_WRITE_TOKEN })
     rawFileUrl = blob.url
   } else {
     const localPath = join(process.cwd(), 'public', blobName)

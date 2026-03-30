@@ -139,6 +139,18 @@ export function AdminBillsClient({ bills }: Props) {
     setQueue(q => q.filter(i => i.status !== 'done'))
   }
 
+  async function handleReparse(id: string) {
+    setReparsingId(id)
+    try {
+      const res = await fetch(`/api/admin/bills/${id}/reparse`, { method: 'POST' })
+      const data = await res.json()
+      if (data.unknownLines?.length) setUnknownLines(data.unknownLines)
+      router.refresh()
+    } finally {
+      setReparsingId(null)
+    }
+  }
+
   async function handleReparseFile(file: File) {
     if (!reparseTargetId) return
     const targetId = reparseTargetId
@@ -426,12 +438,21 @@ export function AdminBillsClient({ bills }: Props) {
                             PDF
                           </a>
                         )}
+                        {b.rawFileUrl && (
+                          <button
+                            onClick={() => handleReparse(b.id)}
+                            disabled={reparsingId === b.id}
+                            style={{ background: 'var(--bg2)', color: 'var(--text2)', border: '1px solid var(--border)', borderRadius: '6px', padding: '4px 10px', fontSize: '12px', cursor: 'pointer', opacity: reparsingId === b.id ? 0.5 : 1 }}
+                          >
+                            {reparsingId === b.id ? 'Parsing…' : 'Reparse'}
+                          </button>
+                        )}
                         <button
                           onClick={() => triggerReparse(b.id)}
                           disabled={reparsingId === b.id}
                           style={{ background: 'var(--bg2)', color: 'var(--text2)', border: '1px solid var(--border)', borderRadius: '6px', padding: '4px 10px', fontSize: '12px', cursor: 'pointer', opacity: reparsingId === b.id ? 0.5 : 1 }}
                         >
-                          {reparsingId === b.id ? 'Parsing…' : 'Reparse'}
+                          {reparsingId === b.id ? 'Parsing…' : 'Re-upload'}
                         </button>
                         <button
                           onClick={() => handleDelete(b.id, `${MONTH_NAMES[b.periodMonth - 1]} ${b.periodYear}`)}

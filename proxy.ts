@@ -1,9 +1,11 @@
-import { auth } from '@/lib/auth.config'
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 
-// Next.js 16+ proxy file that runs Auth.js on every matched request.
-// This replaces the old `middleware.ts` convention.
-// auth() used as NextAuthMiddleware satisfies the NextMiddleware signature.
-export const proxy = auth((_req) => undefined)
+// TEMP: disable Auth.js proxy to avoid dev-time memory issues.
+// Auth checks still happen inside route handlers and server components via `auth()`.
+export function proxy(_req: NextRequest) {
+  return NextResponse.next()
+}
 
 // Match all application routes, excluding static assets and public files.
 export const config = {
