@@ -133,7 +133,7 @@ export default async function BillDetailPage({ params }: Props) {
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {charges.map((c) => {
+            {charges.map((c: typeof charges[number]) => {
               const detail = c.chargeDetail as Array<{ description: string; amount: number; category: string }> | null
               return (
                 <div key={c.id} style={{ background: 'var(--bg1)', border: '1px solid var(--border)', borderRadius: '14px', overflow: 'hidden' }}>
