@@ -36,6 +36,9 @@ yarn-error.log*
 # local db seed sql
 lib/db/seed_data.sql
 
+# local docs
+doc/
+
 # vercel
 .vercel
 

@@ -34,7 +34,6 @@ Environment variables (see `.env.local.example` if present):
 Database:
 
 - Apply migrations: `npm run db:migrate`
-- (Optional) Seed production‑like data: run the SQL in `lib/db/seed_data.sql` against your DB.
 
 ---
 
