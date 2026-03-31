@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { MONTH_NAMES } from '@/lib/utils/dates'
@@ -215,7 +215,20 @@ export function AdminBillsClient({ bills }: Props) {
         </a>
       </div>
 
-      <div className="two-col-grid" style={{ padding: '24px 28px', alignItems: 'start' }}>
+      <div className="bills-grid" style={{ padding: '24px 28px', alignItems: 'start' }}>
+
+        {reparsingId && (
+          <div style={{ gridColumn: '1 / -1', marginBottom: '12px' }}>
+            <div style={{ background: 'var(--bg1)', border: '1px solid var(--border-mg)', borderRadius: '12px', padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text1)' }}>
+                Parsing bill…
+              </div>
+              <div style={{ fontSize: '11px', color: 'var(--text3)' }}>
+                This may take up to about a minute.
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Upload card */}
         <div style={{ background: 'var(--bg1)', border: '1px solid var(--border)', borderRadius: '14px', overflow: 'hidden' }}>

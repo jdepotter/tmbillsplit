@@ -34,6 +34,19 @@ export async function runOrchestrator(
       parserOutput = await runParserAgent(pdfBase64)
     }
 
+    // Debug: log extracted lineDataUsage from rawBillData to verify per-line usage
+    try {
+      const usagePreview = parserOutput.rawBillData?.lineDataUsage
+      // Only log when we actually have entries to avoid noise
+      if (usagePreview && Array.isArray(usagePreview) && usagePreview.length > 0) {
+        console.log('[orchestrator] Parsed lineDataUsage for bill', billId, usagePreview)
+      } else {
+        console.log('[orchestrator] No lineDataUsage parsed for bill', billId)
+      }
+    } catch (e) {
+      console.error('[orchestrator] Error logging lineDataUsage for bill', billId, e)
+    }
+
     // Update bill with parsed metadata
     await db
       .update(bills)
@@ -61,6 +74,44 @@ export async function runOrchestrator(
       parserOutput,
       planSharesOverride,
     )
+
+    // Enrich splitter lines with dataUsedGb from rawBillData.lineDataUsage
+    try {
+      const usageSource = parserOutput.rawBillData?.lineDataUsage
+      if (usageSource && Array.isArray(usageSource) && usageSource.length > 0) {
+        const usageByPhone = new Map<string, number>()
+        for (const entry of usageSource) {
+          if (!entry || !entry.phoneNumber) continue
+          const digits = entry.phoneNumber.replace(/\D/g, '')
+          if (!digits) continue
+          if (typeof entry.dataUsedGb === 'number') {
+            usageByPhone.set(digits, entry.dataUsedGb)
+          }
+        }
+
+        if (usageByPhone.size > 0) {
+          splitterOutput.lines = splitterOutput.lines.map((l) => {
+            const digits = l.phoneNumber.replace(/\D/g, '')
+            const gb = usageByPhone.get(digits)
+            return gb !== undefined ? { ...l, dataUsedGb: gb } : l
+          })
+        }
+      }
+    } catch (e) {
+      console.error('[orchestrator] Error enriching splitter lines with dataUsedGb for bill', billId, e)
+    }
+
+    // Debug: log per-line dataUsedGb coming out of splitter after enrichment
+    try {
+      const splitterUsage = splitterOutput.lines.map((l) => ({
+        phoneNumber: l.phoneNumber,
+        label: l.label,
+        dataUsedGb: l.dataUsedGb,
+      }))
+      console.log('[orchestrator] Splitter per-line usage for bill', billId, splitterUsage)
+    } catch (e) {
+      console.error('[orchestrator] Error logging splitter usage for bill', billId, e)
+    }
 
     // ── 4. Validator ───────────────────────────────────────────────────────────
     const validatorOutput = runValidatorAgent(splitterOutput, parserOutput)
@@ -90,9 +141,21 @@ export async function runOrchestrator(
         extraCharges: String(splitLine.extraCharges),
         taxesFees: String(splitLine.taxesFees),
         discounts: String(splitLine.discounts),
+        dataUsedGb: splitLine.dataUsedGb !== undefined ? String(splitLine.dataUsedGb) : null,
         totalDue: String(splitLine.totalDue),
         chargeDetail: splitLine.chargeDetail,
       })
+    }
+
+    // Debug: confirm what data_used_gb values we are about to persist
+    try {
+      const dbUsagePreview = lineChargeValues.map((v) => ({
+        lineId: v.lineId,
+        dataUsedGb: v.dataUsedGb,
+      }))
+      console.log('[orchestrator] line_charges about to be written for bill', billId, dbUsagePreview)
+    } catch (e) {
+      console.error('[orchestrator] Error logging line_charges usage for bill', billId, e)
     }
 
     // ── 6. Write to DB ────────────────────────────────────────────────────────

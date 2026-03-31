@@ -11,10 +11,16 @@ function createDb() {
   } else {
     const postgres = require('postgres')
     const { drizzle } = require('drizzle-orm/postgres-js')
-    return drizzle(postgres(url), { schema })
+    // Use a small connection pool and reuse it across hot reloads
+    const sql = postgres(url, { max: 10 })
+    return drizzle(sql, { schema })
   }
 }
 
-export const db = createDb()
+// In dev, Next can hot-reload server modules and recreate db clients,
+// which quickly exhausts Postgres connections. Cache the db on globalThis.
+const globalForDb = globalThis as unknown as { _tmDb?: ReturnType<typeof createDb> }
+
+export const db = globalForDb._tmDb ?? (globalForDb._tmDb = createDb())
 
 export * from './schema'

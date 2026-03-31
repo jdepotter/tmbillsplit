@@ -3,6 +3,8 @@ import { db } from '@/lib/db'
 import { bills, lineCharges, lines, users, households } from '@/lib/db/schema'
 import { eq, and, asc, desc } from 'drizzle-orm'
 import { AdminDashboardClient } from './AdminDashboardClient'
+import type { DataUsagePoint } from '@/components/DataUsageChart'
+import { getDataUsedGbFromSummary } from '@/lib/utils/dataUsage'
 interface Props {
   searchParams: Promise<{ month?: string; year?: string; view?: string }>
 }
@@ -21,6 +23,8 @@ export default async function AdminDashboardPage({ searchParams }: Props) {
     .from(bills)
     .where(and(eq(bills.periodMonth, month), eq(bills.periodYear, year)))
     .limit(1)
+
+  const currentUsageGb = bill ? getDataUsedGbFromSummary(bill.rawBillData as any) : null
 
   // Get all line charges for this bill
   let lineData: Array<{
@@ -45,6 +49,7 @@ export default async function AdminDashboardPage({ searchParams }: Props) {
         phoneNumber: lines.phoneNumber,
         label: lines.label,
         householdName: households.name,
+        dataUsedGb: lineCharges.dataUsedGb,
         planShare: lineCharges.planShare,
         devicePayment: lineCharges.devicePayment,
         extraCharges: lineCharges.extraCharges,
@@ -70,7 +75,7 @@ export default async function AdminDashboardPage({ searchParams }: Props) {
 
   // Yearly trend data: all done bills for the selected year, summed across all lines
   const yearBills = await db
-    .select({ id: bills.id, periodMonth: bills.periodMonth, periodYear: bills.periodYear })
+    .select({ id: bills.id, periodMonth: bills.periodMonth, periodYear: bills.periodYear, rawBillData: bills.rawBillData })
     .from(bills)
     .where(and(eq(bills.periodYear, year), eq(bills.parseStatus, 'done')))
     .orderBy(asc(bills.periodMonth))
@@ -91,6 +96,12 @@ export default async function AdminDashboardPage({ searchParams }: Props) {
       devicePayment: rows.reduce((s: number, r: typeof rows[number]) => s + parseFloat(r.devicePayment), 0),
       extraCharges: rows.reduce((s: number, r: typeof rows[number]) => s + parseFloat(r.extraCharges), 0),
     }
+  }))
+
+  const usageTrendData: DataUsagePoint[] = yearBills.map((b) => ({
+    month: b.periodMonth,
+    year: b.periodYear,
+    gb: getDataUsedGbFromSummary(b.rawBillData as any),
   }))
 
   // Bill period boundaries
@@ -117,6 +128,8 @@ export default async function AdminDashboardPage({ searchParams }: Props) {
       lineData={lineData}
       recentBills={recentBills}
       trendData={trendData}
+      usageTrendData={usageTrendData}
+      currentUsageGb={currentUsageGb}
       userName={session!.user.name ?? 'Admin'}
       minPeriod={minPeriod}
       maxPeriod={maxPeriod}

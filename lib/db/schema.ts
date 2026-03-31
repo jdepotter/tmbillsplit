@@ -82,6 +82,7 @@ export const lineCharges = pgTable('line_charges', {
   extraCharges: numeric('extra_charges', { precision: 10, scale: 2 }).default('0').notNull(),
   taxesFees: numeric('taxes_fees', { precision: 10, scale: 2 }).default('0').notNull(),
   discounts: numeric('discounts', { precision: 10, scale: 2 }).default('0').notNull(),
+  dataUsedGb: numeric('data_used_gb', { precision: 10, scale: 3 }),
   totalDue: numeric('total_due', { precision: 10, scale: 2 }).notNull(),
   chargeDetail: jsonb('charge_detail'),
 })

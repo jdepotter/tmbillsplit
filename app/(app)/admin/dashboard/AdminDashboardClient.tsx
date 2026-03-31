@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { MONTH_NAMES } from '@/lib/utils/dates'
 import { phoneDisplay } from '@/lib/utils/phone'
 import { TrendChart, TrendPoint } from '@/components/TrendChart'
+import { DataUsageChart, DataUsagePoint } from '@/components/DataUsageChart'
 
 interface LineRow {
   lineId: string
@@ -11,6 +12,7 @@ interface LineRow {
   label: string | null
   userName: string | null
   householdName: string | null
+  dataUsedGb: string | null
   planShare: string
   devicePayment: string
   extraCharges: string
@@ -44,6 +46,8 @@ interface Props {
   lineData: LineRow[]
   recentBills: RecentBill[]
   trendData: TrendPoint[]
+  usageTrendData: DataUsagePoint[]
+  currentUsageGb: number | null
   userName: string
   minPeriod: { month: number; year: number } | null
   maxPeriod: { month: number; year: number } | null
@@ -65,7 +69,7 @@ const STATUS_COLORS: Record<string, string> = {
   error: 'var(--red)',
 }
 
-export function AdminDashboardClient({ month, year, view, bill, lineData, recentBills, trendData, userName, minPeriod, maxPeriod }: Props) {
+export function AdminDashboardClient({ month, year, view, bill, lineData, recentBills, trendData, usageTrendData, currentUsageGb, userName, minPeriod, maxPeriod }: Props) {
   const router = useRouter()
 
   function toSeq(m: number, y: number) { return y * 12 + m }
@@ -107,6 +111,7 @@ export function AdminDashboardClient({ month, year, view, bill, lineData, recent
   const yearlyPlan = trendData.reduce((s, d) => s + d.planShare, 0)
   const yearlyDevice = trendData.reduce((s, d) => s + d.devicePayment, 0)
   const yearlyExtra = trendData.reduce((s, d) => s + d.extraCharges, 0)
+  const yearlyUsageGb = usageTrendData.reduce((s, d) => s + d.gb, 0)
 
   return (
     <div>
@@ -152,6 +157,7 @@ export function AdminDashboardClient({ month, year, view, bill, lineData, recent
               <StatCard label="Plan cost" value={`$${yearlyPlan.toFixed(2)}`} sub={`${trendData.length} months`} />
               <StatCard label="Device payments" value={`$${yearlyDevice.toFixed(2)}`} color="var(--amber)" />
               <StatCard label="Extra charges" value={`$${yearlyExtra.toFixed(2)}`} color="var(--red)" />
+              <StatCard label="Data used" value={`${yearlyUsageGb.toFixed(2)} GB`} sub={`${usageTrendData.length} months`} />
             </div>
             <div style={{ background: 'var(--bg1)', border: '1px solid var(--border)', borderRadius: '14px', overflow: 'hidden', marginBottom: '20px' }}>
               <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', fontSize: '13px', fontWeight: 600 }}>
@@ -161,6 +167,17 @@ export function AdminDashboardClient({ month, year, view, bill, lineData, recent
                 <TrendChart data={trendData} height={220} />
               </div>
             </div>
+
+            {usageTrendData.length >= 2 && (
+              <div style={{ background: 'var(--bg1)', border: '1px solid var(--border)', borderRadius: '14px', overflow: 'hidden', marginBottom: '20px' }}>
+                <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', fontSize: '13px', fontWeight: 600 }}>
+                  Data usage trend — {year} · All lines combined
+                </div>
+                <div style={{ padding: '16px 8px 0' }}>
+                  <DataUsageChart data={usageTrendData} height={220} />
+                </div>
+              </div>
+            )}
             <div style={{ background: 'var(--bg1)', border: '1px solid var(--border)', borderRadius: '14px', overflow: 'hidden' }}>
               <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', fontSize: '13px', fontWeight: 600 }}>Monthly breakdown</div>
               <div className="table-scroll">
@@ -196,6 +213,7 @@ export function AdminDashboardClient({ month, year, view, bill, lineData, recent
               <StatCard label="Plan Cost" value={fmt(bill?.planCost)} sub={bill ? `Split across ${bill.activeLineCount ?? '—'} lines` : 'No bill'} />
               <StatCard label="Device Payments" value={`$${totalDevice.toFixed(2)}`} color="var(--amber)" />
               <StatCard label="Extra Charges" value={`$${totalExtra.toFixed(2)}`} color="var(--red)" />
+              <StatCard label="Data used" value={currentUsageGb !== null ? `${currentUsageGb.toFixed(2)} GB` : '—'} />
             </div>
 
             {/* Line breakdown table */}

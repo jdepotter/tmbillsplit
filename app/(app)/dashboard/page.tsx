@@ -4,6 +4,7 @@ import { bills, lineCharges, lines, users, households } from '@/lib/db/schema'
 import { eq, and, asc, desc } from 'drizzle-orm'
 import { UserDashboardClient } from './UserDashboardClient'
 import type { TrendPoint } from '@/components/TrendChart'
+import type { DataUsagePoint } from '@/components/DataUsageChart'
 
 interface Props {
   searchParams: Promise<{ month?: string; year?: string; view?: string; lineId?: string }>
@@ -32,6 +33,17 @@ export default async function UserDashboardPage({ searchParams }: Props) {
     ? params.lineId
     : (!isHouseholdView ? (session.user.lineId ?? null) : null)
 
+  // Phone number for the currently targeted line (used for per-line data usage)
+  let targetLinePhone: string | null = null
+  if (targetLineId) {
+    const [lineRow] = await db
+      .select({ phoneNumber: lines.phoneNumber })
+      .from(lines)
+      .where(eq(lines.id, targetLineId))
+      .limit(1)
+    targetLinePhone = lineRow?.phoneNumber ?? null
+  }
+
   // Resolve line owner name when viewing a specific other line
   let viewingName: string | null = null
   if (canViewOther && params.lineId && params.lineId !== session.user.lineId) {
@@ -52,6 +64,27 @@ export default async function UserDashboardPage({ searchParams }: Props) {
     .from(bills)
     .where(and(eq(bills.periodMonth, month), eq(bills.periodYear, year), eq(bills.parseStatus, 'done')))
     .limit(1)
+
+  // Current data usage (GB) from persisted line_charges.data_used_gb
+  let currentUsageGb: number | null = null
+  if (bill) {
+    if (isHouseholdView && householdId) {
+      const usageRows = await db
+        .select({ dataUsedGb: lineCharges.dataUsedGb })
+        .from(lineCharges)
+        .innerJoin(lines, eq(lineCharges.lineId, lines.id))
+        .where(and(eq(lineCharges.billId, bill.id), eq(lines.householdId, householdId)))
+      const totalGb = usageRows.reduce((sum, r) => sum + (r.dataUsedGb !== null ? parseFloat(r.dataUsedGb) : 0), 0)
+      currentUsageGb = totalGb
+    } else if (targetLineId) {
+      const [usageRow] = await db
+        .select({ dataUsedGb: lineCharges.dataUsedGb })
+        .from(lineCharges)
+        .where(and(eq(lineCharges.billId, bill.id), eq(lineCharges.lineId, targetLineId)))
+        .limit(1)
+      currentUsageGb = usageRow && usageRow.dataUsedGb !== null ? parseFloat(usageRow.dataUsedGb) : 0
+    }
+  }
 
   // Single-line charges (used when viewing a specific line)
   let myCharges = null
@@ -107,6 +140,7 @@ export default async function UserDashboardPage({ searchParams }: Props) {
     .orderBy(asc(bills.periodMonth))
 
   const trendData: TrendPoint[] = []
+  const usageTrendData: DataUsagePoint[] = []
 
   if (isHouseholdView) {
     // Aggregate all household lines per month
@@ -116,6 +150,7 @@ export default async function UserDashboardPage({ searchParams }: Props) {
           planShare: lineCharges.planShare,
           devicePayment: lineCharges.devicePayment,
           extraCharges: lineCharges.extraCharges,
+          dataUsedGb: lineCharges.dataUsedGb,
         })
         .from(lineCharges)
         .innerJoin(lines, eq(lineCharges.lineId, lines.id))
@@ -128,6 +163,11 @@ export default async function UserDashboardPage({ searchParams }: Props) {
           devicePayment: rows.reduce((s: number, r: typeof rows[number]) => s + parseFloat(r.devicePayment), 0),
           extraCharges: rows.reduce((s: number, r: typeof rows[number]) => s + parseFloat(r.extraCharges), 0),
         })
+        usageTrendData.push({
+          month: b.periodMonth,
+          year: b.periodYear,
+          gb: rows.reduce((s: number, r: typeof rows[number]) => s + (r.dataUsedGb !== null ? parseFloat(r.dataUsedGb) : 0), 0),
+        })
       }
     }
   } else if (targetLineId) {
@@ -137,6 +177,7 @@ export default async function UserDashboardPage({ searchParams }: Props) {
           planShare: lineCharges.planShare,
           devicePayment: lineCharges.devicePayment,
           extraCharges: lineCharges.extraCharges,
+          dataUsedGb: lineCharges.dataUsedGb,
         })
         .from(lineCharges)
         .where(and(eq(lineCharges.billId, b.id), eq(lineCharges.lineId, targetLineId)))
@@ -148,6 +189,11 @@ export default async function UserDashboardPage({ searchParams }: Props) {
           planShare: parseFloat(row.planShare),
           devicePayment: parseFloat(row.devicePayment),
           extraCharges: parseFloat(row.extraCharges),
+        })
+        usageTrendData.push({
+          month: b.periodMonth,
+          year: b.periodYear,
+          gb: row.dataUsedGb !== null ? parseFloat(row.dataUsedGb) : 0,
         })
       }
     }
@@ -184,6 +230,8 @@ export default async function UserDashboardPage({ searchParams }: Props) {
       viewingLineId={targetLineId}
       canViewOther={canViewOther}
       trendData={trendData}
+      usageTrendData={usageTrendData}
+      currentUsageGb={currentUsageGb}
       minPeriod={minPeriod}
       maxPeriod={maxPeriod}
     />

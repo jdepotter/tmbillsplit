@@ -16,5 +16,13 @@ export async function runParserAgent(pdfBase64: string): Promise<ParserOutput> {
     phoneNumber: l.phoneNumber.replace(/\D/g, ''),
   }))
 
+  // Also normalise any phone numbers inside rawBillData.lineDataUsage
+  if (output.rawBillData && Array.isArray(output.rawBillData.lineDataUsage)) {
+    output.rawBillData.lineDataUsage = output.rawBillData.lineDataUsage.map((entry) => ({
+      ...entry,
+      phoneNumber: entry.phoneNumber.replace(/\D/g, ''),
+    }))
+  }
+
   return output
 }

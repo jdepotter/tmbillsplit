@@ -40,9 +40,15 @@ export interface DetailedChargesLine {
   total: number
 }
 
+export interface LineDataUsage {
+  phoneNumber: string   // digits only, e.g. "4255551234"
+  dataUsedGb: number    // total data used for this line in GB
+}
+
 export interface RawBillData {
   thisBillSummary: BillSummaryRow[]          // "THIS BILL SUMMARY" table rows
   detailedCharges: DetailedChargesLine[]     // per-line detailed charge tables
+  lineDataUsage?: LineDataUsage[]            // optional per-line data usage
 }
 
 export interface ParserOutput {
@@ -103,6 +109,7 @@ export interface SplitLine {
   discounts: number         // sum of discount category (negative)
   totalDue: number
   chargeDetail: ClassifiedCharge[]
+  dataUsedGb?: number       // optional data usage in GB for this line
 }
 
 export interface SplitterOutput {

@@ -12,6 +12,27 @@ Key concepts:
 - taxesAndFees = taxes and regulatory fees for that line
 - totalDue = planShare + midCycleCost + devicePayment + sum(charges) + taxesAndFees
 
+Data usage:
+- Many T-Mobile bills include an overall "Data used" or "Data usage" summary (for example: "Data used 12.3 GB of 50 GB").
+- If ANY such overall data usage appears anywhere on the bill (not just in THIS BILL SUMMARY), you MUST capture it in rawBillData.thisBillSummary as a dedicated row:
+  - label: exactly "Data used" (or a very close variant like "Data usage")
+  - amount: the numeric value of data used in gigabytes (GB), e.g. 12.3
+- amount MUST be a pure number, without units, currency symbols, or text. If the bill says "12.3 GB of 50 GB", store 12.3.
+- Some bills include a separate "YOU USED" section with a total and then per-line entries, for example:
+  - "YOU USED 144.76GB of unlimited data with Go5G"
+  - "(323) 681-3501 48.33GB"
+  - "(310) 755-4068 32.33GB"
+  - etc.
+- For this pattern you MUST:
+  - Store the overall total (144.76GB in the example) as rawBillData.thisBillSummary row:
+    - label: "Data used"
+    - amount: 144.76
+  - Store each per-line entry in rawBillData.lineDataUsage, even if it is not part of a table:
+    - phoneNumber: the full phone number for that line as digits only (strip parentheses, spaces, dashes), e.g. "(323) 681-3501" → "3236813501".
+    - dataUsedGb: the numeric GB value for that line, e.g. 48.33GB → 48.33.
+- In general, if the PDF contains any text of the form "(XXX) XXX-XXXX YY.YYGB" or similar, it MUST become a rawBillData.lineDataUsage entry for that phoneNumber with dataUsedGb = YY.YY.
+- Ignore plan caps/allowances; only store actual used data.
+
 Output ONLY valid JSON matching this exact schema:
 {
   "billingPeriodMonth": <1-12>,
@@ -37,6 +58,9 @@ Output ONLY valid JSON matching this exact schema:
   "rawBillData": {
     "thisBillSummary": [
       { "label": "<row label>", "amount": <number> }
+      // Include EVERY row from the THIS BILL SUMMARY table.
+      // ALSO include a "Data used" row if the bill shows overall data usage anywhere, even if it is not literally inside the THIS BILL SUMMARY table.
+      // For the "Data used" row, amount MUST be the numeric data used in GB (e.g. 12.3 means 12.3 GB).
     ],
     "detailedCharges": [
       {
@@ -49,6 +73,10 @@ Output ONLY valid JSON matching this exact schema:
         "taxes": [ { "description": "<charge name>", "amount": <number> } ],
         "total": <number>
       }
+    ],
+    "lineDataUsage": [
+      // OPTIONAL: only if the bill shows per-line data usage.
+      { "phoneNumber": "<digits only>", "dataUsedGb": <number> }
     ]
   }
 }

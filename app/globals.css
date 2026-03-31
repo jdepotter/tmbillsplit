@@ -125,6 +125,12 @@ body {
   grid-template-columns: 1fr 1fr;
 }
 
+.bills-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 360px 1fr;
+}
+
 .table-scroll {
   width: 100%;
   overflow-x: auto;
@@ -154,7 +160,7 @@ body {
     row-gap: 8px;
   }
 
-  .two-col-grid {
+  .two-col-grid, .bills-grid {
     grid-template-columns: 1fr;
   }
 
