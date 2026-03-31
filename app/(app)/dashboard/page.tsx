@@ -74,7 +74,7 @@ export default async function UserDashboardPage({ searchParams }: Props) {
         .from(lineCharges)
         .innerJoin(lines, eq(lineCharges.lineId, lines.id))
         .where(and(eq(lineCharges.billId, bill.id), eq(lines.householdId, householdId)))
-      const totalGb = usageRows.reduce((sum, r) => sum + (r.dataUsedGb !== null ? parseFloat(r.dataUsedGb) : 0), 0)
+      const totalGb = usageRows.reduce((sum: number, r: typeof usageRows[number]) => sum + (r.dataUsedGb !== null ? parseFloat(r.dataUsedGb) : 0), 0)
       currentUsageGb = totalGb
     } else if (targetLineId) {
       const [usageRow] = await db

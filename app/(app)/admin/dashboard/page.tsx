@@ -33,6 +33,7 @@ export default async function AdminDashboardPage({ searchParams }: Props) {
     label: string | null
     userName: string | null
     householdName: string | null
+    dataUsedGb: string | null
     planShare: string
     devicePayment: string
     extraCharges: string
@@ -98,7 +99,7 @@ export default async function AdminDashboardPage({ searchParams }: Props) {
     }
   }))
 
-  const usageTrendData: DataUsagePoint[] = yearBills.map((b) => ({
+  const usageTrendData: DataUsagePoint[] = yearBills.map((b: typeof yearBills[number]) => ({
     month: b.periodMonth,
     year: b.periodYear,
     gb: getDataUsedGbFromSummary(b.rawBillData as any),
