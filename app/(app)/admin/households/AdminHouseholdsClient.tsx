@@ -107,6 +107,7 @@ export function AdminHouseholdsClient({ households }: Props) {
           </div>
         ) : (
           <div style={{ background: 'var(--bg1)', border: '1px solid var(--border)', borderRadius: '14px', overflow: 'hidden' }}>
+            <div className="table-scroll">
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
@@ -151,6 +152,7 @@ export function AdminHouseholdsClient({ households }: Props) {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         )}
       </div>
