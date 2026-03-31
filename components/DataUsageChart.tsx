@@ -26,7 +26,7 @@ export function DataUsageChart({ data, height = 180 }: Props) {
   if (data.length < 2) {
     return (
       <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text3)', fontSize: '12px' }}>
-        Not enough data 
+        Not enough data
       </div>
     )
   }
