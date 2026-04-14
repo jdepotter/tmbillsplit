@@ -48,7 +48,7 @@ npm run build   # next build --webpack
 npm start       # next start
 ```
 
-You can deploy anywhere that can run a Node.js server (Vercel, Fly.io, Render, bare VM, etc.). On PaaS platforms, set the build command to `npm run build` and the start command to `npm start`.
+Primary deployment target is **Netlify** (see `netlify.toml` and `@netlify/plugin-nextjs`). PDFs are stored in Netlify Blobs; auth is automatic inside Netlify Functions. You can also deploy to any Node.js host (Fly.io, Render, bare VM). For non-Netlify hosts using the Blobs API, set `NETLIFY_SITE_ID` and `NETLIFY_BLOBS_TOKEN`. Locally, if neither is set, PDFs are written to `public/bills/`.
 
 Minimum recommended instance: 1–2 vCPU, 1–2 GB RAM.
 
@@ -112,7 +112,7 @@ Steps:
 		 - `regularPlanCost` is divided evenly across active lines.
 		 - Mid‑cycle changes, device payments, one‑off charges, and taxes stay attached to the specific line they appear on.
 	 - Produces per‑line totals:
-     
+
 		 - `planShare`
 		 - `midCycleCharges`
 		 - `devicePayment`

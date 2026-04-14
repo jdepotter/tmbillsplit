@@ -3,9 +3,7 @@ import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { bills } from '@/lib/db/schema'
 import { runOrchestrator } from '@/lib/agents/orchestrator'
-import { put } from '@vercel/blob'
-import { writeFile } from 'fs/promises'
-import { join } from 'path'
+import { putBillPdf } from '@/lib/storage/bill-pdf'
 
 async function requireAdmin() {
   const session = await auth()
@@ -53,17 +51,8 @@ export async function POST(req: NextRequest) {
   const fileBuffer = await file.arrayBuffer()
   const pdfBase64 = Buffer.from(fileBuffer).toString('base64')
 
-  // Store PDF — Vercel Blob in production, local filesystem in dev
   const blobName = `bills/${year}-${String(month).padStart(2, '0')}.pdf`
-  let rawFileUrl: string | null = null
-  if (process.env.PROD_READ_WRITE_TOKEN) {
-    const blob = await put(blobName, fileBuffer, { access: 'private', addRandomSuffix: false, allowOverwrite: true, token: process.env.PROD_READ_WRITE_TOKEN })
-    rawFileUrl = blob.url
-  } else {
-    const localPath = join(process.cwd(), 'public', blobName)
-    await writeFile(localPath, Buffer.from(fileBuffer))
-    rawFileUrl = `/${blobName}`
-  }
+  const rawFileUrl = await putBillPdf(blobName, fileBuffer)
 
   // Upsert bill — set planShares before parsing so orchestrator picks it up
   const [bill] = await db

@@ -4,9 +4,7 @@ import { db } from '@/lib/db'
 import { bills } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
 import { runOrchestrator } from '@/lib/agents/orchestrator'
-import { get } from '@vercel/blob'
-import { readFile } from 'fs/promises'
-import { join } from 'path'
+import { getBillPdf } from '@/lib/storage/bill-pdf'
 
 async function requireAdmin() {
   const session = await auth()
@@ -22,20 +20,9 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   if (!bill) return new NextResponse('Not found', { status: 404 })
   if (!bill.rawFileUrl) return NextResponse.json({ error: 'No PDF stored for this bill. Use re-upload instead.' }, { status: 400 })
 
-  let pdfBase64: string
-  if (process.env.PROD_READ_WRITE_TOKEN) {
-    const result = await get(bill.rawFileUrl, { access: 'private', token: process.env.PROD_READ_WRITE_TOKEN })
-    if (!result || result.statusCode !== 200) {
-      return NextResponse.json({ error: 'Could not fetch stored PDF' }, { status: 500 })
-    }
-    const buf = await new Response(result.stream).arrayBuffer()
-    pdfBase64 = Buffer.from(buf).toString('base64')
-  } else {
-    // Local: rawFileUrl is like /bills/2026-01.pdf
-    const localPath = join(process.cwd(), 'public', bill.rawFileUrl)
-    const buf = await readFile(localPath)
-    pdfBase64 = buf.toString('base64')
-  }
+  const buf = await getBillPdf(bill.rawFileUrl)
+  if (!buf) return NextResponse.json({ error: 'Could not fetch stored PDF' }, { status: 500 })
+  const pdfBase64 = Buffer.from(buf).toString('base64')
 
   await db.update(bills).set({ parseStatus: 'pending' }).where(eq(bills.id, id))
 

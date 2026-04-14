@@ -5,9 +5,7 @@ import { bills } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
 import { runOrchestrator } from '@/lib/agents/orchestrator'
 import { z } from 'zod'
-import { put } from '@vercel/blob'
-import { writeFile } from 'fs/promises'
-import { join } from 'path'
+import { putBillPdf } from '@/lib/storage/bill-pdf'
 
 async function requireAdmin() {
   const session = await auth()
@@ -55,15 +53,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const pdfBase64 = Buffer.from(fileBuffer).toString('base64')
 
   const blobName = `bills/${bill.periodYear}-${String(bill.periodMonth).padStart(2, '0')}.pdf`
-  let rawFileUrl: string | null = bill.rawFileUrl
-  if (process.env.PROD_READ_WRITE_TOKEN) {
-    const blob = await put(blobName, fileBuffer, { access: 'private', addRandomSuffix: false, allowOverwrite: true, token: process.env.PROD_READ_WRITE_TOKEN })
-    rawFileUrl = blob.url
-  } else {
-    const localPath = join(process.cwd(), 'public', blobName)
-    await writeFile(localPath, Buffer.from(fileBuffer))
-    rawFileUrl = `/${blobName}`
-  }
+  const rawFileUrl = await putBillPdf(blobName, fileBuffer)
 
   await db.update(bills).set({ parseStatus: 'pending', rawFileUrl }).where(eq(bills.id, id))
 

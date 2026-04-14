@@ -3,9 +3,7 @@ import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { bills } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
-import { get } from '@vercel/blob'
-import { readFile } from 'fs/promises'
-import { join } from 'path'
+import { getBillPdf } from '@/lib/storage/bill-pdf'
 
 async function requireAdmin() {
   const session = await auth()
@@ -23,19 +21,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
   const filename = `bill-${bill.periodYear}-${String(bill.periodMonth).padStart(2, '0')}.pdf`
 
-  let pdfBody: ArrayBuffer
-
-  if (process.env.PROD_READ_WRITE_TOKEN) {
-    const result = await get(bill.rawFileUrl, { access: 'private', token: process.env.PROD_READ_WRITE_TOKEN })
-    if (!result || result.statusCode !== 200) {
-      return new NextResponse('Could not fetch stored PDF', { status: 502 })
-    }
-    pdfBody = await new Response(result.stream).arrayBuffer()
-  } else {
-    const localPath = join(process.cwd(), 'public', bill.rawFileUrl)
-    const nodeBuf = await readFile(localPath)
-    pdfBody = nodeBuf.buffer.slice(nodeBuf.byteOffset, nodeBuf.byteOffset + nodeBuf.byteLength) as ArrayBuffer
-  }
+  const pdfBody = await getBillPdf(bill.rawFileUrl)
+  if (!pdfBody) return new NextResponse('Could not fetch stored PDF', { status: 502 })
 
   return new NextResponse(pdfBody, {
     status: 200,
