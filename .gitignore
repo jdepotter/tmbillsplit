@@ -44,9 +44,6 @@ CLAUDE.md
 AGENTS.md
 /netlify_migrate/
 
-# vercel
-.vercel
-
 # typescript
 *.tsbuildinfo
 next-env.d.ts

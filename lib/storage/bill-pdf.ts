@@ -2,6 +2,10 @@ import { getStore } from '@netlify/blobs'
 import { readFile, writeFile } from 'fs/promises'
 import { join } from 'path'
 
+export function billPdfKey(periodYear: number, periodMonth: number): string {
+  return `bills/${periodYear}-${String(periodMonth).padStart(2, '0')}.pdf`
+}
+
 function useNetlifyBlobs() {
   return Boolean(process.env.NETLIFY || process.env.NETLIFY_BLOBS_TOKEN)
 }

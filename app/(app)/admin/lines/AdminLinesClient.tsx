@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { phoneDisplay } from '@/lib/utils/phone'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 interface Line {
   id: string
@@ -51,15 +52,15 @@ export function AdminLinesClient({ lines, households }: { lines: Line[]; househo
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 28px', borderBottom: '1px solid var(--border)', position: 'sticky', top: 0, background: 'var(--bg0)', zIndex: 10 }}>
-        <div>
-          <div style={{ fontSize: '16px', fontWeight: 600, letterSpacing: '-0.3px' }}>Lines</div>
-          <div style={{ fontSize: '12px', color: 'var(--text3)', marginTop: '1px' }}>{lines.length} phone lines</div>
-        </div>
-        <button onClick={() => { setShowCreate(true); setError('') }} style={{ background: 'var(--mg)', color: '#fff', border: 'none', borderRadius: '8px', padding: '8px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)' }}>
-          + Add line
-        </button>
-      </div>
+      <PageHeader
+        title="Lines"
+        subtitle={`${lines.length} phone lines`}
+        right={
+          <button onClick={() => { setShowCreate(true); setError('') }} style={{ background: 'var(--mg)', color: '#fff', border: 'none', borderRadius: '8px', padding: '8px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)' }}>
+            + Add line
+          </button>
+        }
+      />
 
       <div style={{ padding: '24px 28px' }}>
         <div style={{ background: 'var(--bg1)', border: '1px solid var(--border)', borderRadius: '14px', overflow: 'hidden' }}>

@@ -24,7 +24,7 @@ export default async function AdminDashboardPage({ searchParams }: Props) {
     .where(and(eq(bills.periodMonth, month), eq(bills.periodYear, year)))
     .limit(1)
 
-  const currentUsageGb = bill ? getDataUsedGbFromSummary(bill.rawBillData as any) : null
+  const currentUsageGb = bill ? getDataUsedGbFromSummary(bill.rawBillData) : null
 
   // Get all line charges for this bill
   let lineData: Array<{
@@ -102,7 +102,7 @@ export default async function AdminDashboardPage({ searchParams }: Props) {
   const usageTrendData: DataUsagePoint[] = yearBills.map((b: typeof yearBills[number]) => ({
     month: b.periodMonth,
     year: b.periodYear,
-    gb: getDataUsedGbFromSummary(b.rawBillData as any),
+    gb: getDataUsedGbFromSummary(b.rawBillData),
   }))
 
   // Bill period boundaries

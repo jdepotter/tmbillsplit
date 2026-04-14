@@ -5,6 +5,8 @@ import { MONTH_NAMES } from '@/lib/utils/dates'
 import { phoneDisplay } from '@/lib/utils/phone'
 import { TrendChart, TrendPoint } from '@/components/TrendChart'
 import { DataUsageChart, DataUsagePoint } from '@/components/DataUsageChart'
+import { initials } from '@/lib/utils/string'
+import { formatCurrency } from '@/lib/utils/currency'
 
 interface Charges {
   planShare: string
@@ -56,14 +58,8 @@ interface Props {
 }
 
 function fmt(val: string | null | undefined) {
-  if (!val) return '$0.00'
-  const n = parseFloat(val)
-  return `$${n.toFixed(2)}`
-}
-
-function initials(name?: string | null) {
-  if (!name) return '?'
-  return name.split(' ').map((p) => p[0]).join('').toUpperCase().slice(0, 2)
+  if (val === null || val === undefined || val === '') return '$0.00'
+  return formatCurrency(val)
 }
 
 function BreakdownRow({ label, value, color }: { label: string; value: string; color?: string }) {

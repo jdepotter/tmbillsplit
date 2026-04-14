@@ -60,7 +60,8 @@ async function main() {
     const key = `bills/${period.year}-${String(period.month).padStart(2, '0')}.pdf`
     try {
       const data = await readFile(join(DIR, name))
-      await store.set(key, data)
+      const ab = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer
+      await store.set(key, ab)
       console.log(`✓ ${name} → ${key} (${data.length} bytes)`)
       ok++
     } catch (e) {

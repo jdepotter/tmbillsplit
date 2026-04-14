@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 import { db, users } from '@/lib/db'
 import { eq } from 'drizzle-orm'
 import { hash } from 'bcryptjs'
@@ -16,14 +16,9 @@ const patchSchema = z.object({
   newPassword: z.string().min(8).nullable().optional(),
 })
 
-async function requireAdmin() {
-  const session = await auth()
-  if (!session || session.user.role !== 'admin') return null
-  return session
-}
-
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  if (!await requireAdmin()) return new NextResponse('Forbidden', { status: 403 })
+  const guard = await requireAdmin()
+  if (guard instanceof NextResponse) return guard
 
   const { id } = await params
   const body = await req.json()
@@ -53,12 +48,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await requireAdmin()
-  if (!session) return new NextResponse('Forbidden', { status: 403 })
+  const guard = await requireAdmin()
+  if (guard instanceof NextResponse) return guard
 
   const { id } = await params
 
-  if (id === session.user.id) {
+  if (id === guard.user.id) {
     return NextResponse.json({ error: 'Cannot delete your own account' }, { status: 400 })
   }
 

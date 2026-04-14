@@ -2,6 +2,9 @@
 
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
+import { initials } from '@/lib/utils/string'
+import { phoneDisplay } from '@/lib/utils/phone'
+import { GridIcon, UserIcon, FileIcon, PhoneIcon, PeopleIcon, HomeIcon } from '@/components/ui/icons'
 
 interface User {
   name?: string | null
@@ -18,21 +21,6 @@ interface LineOption {
 interface SidebarProps {
   user: User
   allLines?: LineOption[]
-}
-
-function initials(name?: string | null) {
-  if (!name) return '?'
-  return name
-    .split(' ')
-    .map((p) => p[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
-}
-
-function phoneDisplay(n: string) {
-  if (n.length === 10) return `•••• ${n.slice(-4)}`
-  return n
 }
 
 function NavItem({
@@ -133,47 +121,6 @@ function LineNavItem({ line }: { line: LineOption }) {
     </Link>
   )
 }
-
-const GridIcon = () => (
-  <svg viewBox="0 0 16 16" fill="currentColor" width="16" height="16">
-    <rect x="1" y="1" width="6" height="6" rx="1.5" />
-    <rect x="9" y="1" width="6" height="6" rx="1.5" />
-    <rect x="1" y="9" width="6" height="6" rx="1.5" />
-    <rect x="9" y="9" width="6" height="6" rx="1.5" />
-  </svg>
-)
-
-const UserIcon = () => (
-  <svg viewBox="0 0 16 16" fill="currentColor" width="16" height="16">
-    <circle cx="8" cy="4.5" r="2.5" />
-    <path d="M2 13.5C2 11.01 4.686 9 8 9s6 2.01 6 4.5H2z" />
-  </svg>
-)
-
-const FileIcon = () => (
-  <svg viewBox="0 0 16 16" fill="currentColor" width="16" height="16">
-    <path d="M14 4.5V14a2 2 0 01-2 2H4a2 2 0 01-2-2V2a2 2 0 012-2h5.5L14 4.5zm-3 0A1.5 1.5 0 019.5 3V1H4a1 1 0 00-1 1v12a1 1 0 001 1h8a1 1 0 001-1V4.5h-2z" />
-  </svg>
-)
-
-const PhoneIcon = () => (
-  <svg viewBox="0 0 16 16" fill="currentColor" width="16" height="16">
-    <path d="M3.925 1.105a.5.5 0 00-.61-.333L1.15 1.361A1 1 0 00.5 2.32C.5 9.592 6.408 15.5 13.68 15.5a1 1 0 00.96-.65l.588-2.165a.5.5 0 00-.334-.611l-3-1a.5.5 0 00-.544.165l-1.2 1.6a7.54 7.54 0 01-3.99-3.99l1.6-1.2a.5.5 0 00.165-.544l-1-3z"/>
-  </svg>
-)
-
-const PeopleIcon = () => (
-  <svg viewBox="0 0 16 16" fill="currentColor" width="16" height="16">
-    <path d="M11 6a3 3 0 11-6 0 3 3 0 016 0z" />
-    <path fillRule="evenodd" d="M0 8a8 8 0 1116 0A8 8 0 010 8zm8-7a7 7 0 100 14A7 7 0 008 1z" />
-  </svg>
-)
-
-const HomeIcon = () => (
-  <svg viewBox="0 0 16 16" fill="currentColor" width="16" height="16">
-    <path d="M8.354 1.146a.5.5 0 00-.708 0l-6 6-.146.147V14.5A1.5 1.5 0 003 16h3.5v-4.5h3V16H13a1.5 1.5 0 001.5-1.5V7.293l-.146-.147-6-6z"/>
-  </svg>
-)
 
 export function Sidebar({ user, allLines = [] }: SidebarProps) {
   const isAdmin = user.role === 'admin'

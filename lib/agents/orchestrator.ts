@@ -5,6 +5,7 @@ import { runParserAgent } from './parser-agent'
 import { runClassifierAgent } from './classifier-agent'
 import { runSplitterAgent } from './splitter-agent'
 import { runValidatorAgent } from './validator-agent'
+import { normalizePhone } from '@/lib/utils/phone'
 import type { OrchestratorResult } from './types'
 
 export async function runOrchestrator(
@@ -82,7 +83,7 @@ export async function runOrchestrator(
         const usageByPhone = new Map<string, number>()
         for (const entry of usageSource) {
           if (!entry || !entry.phoneNumber) continue
-          const digits = entry.phoneNumber.replace(/\D/g, '')
+          const digits = normalizePhone(entry.phoneNumber)
           if (!digits) continue
           if (typeof entry.dataUsedGb === 'number') {
             usageByPhone.set(digits, entry.dataUsedGb)
@@ -91,7 +92,7 @@ export async function runOrchestrator(
 
         if (usageByPhone.size > 0) {
           splitterOutput.lines = splitterOutput.lines.map((l) => {
-            const digits = l.phoneNumber.replace(/\D/g, '')
+            const digits = normalizePhone(l.phoneNumber)
             const gb = usageByPhone.get(digits)
             return gb !== undefined ? { ...l, dataUsedGb: gb } : l
           })
@@ -121,7 +122,7 @@ export async function runOrchestrator(
 
     // ── 5. Match parsed phone numbers to DB line IDs ───────────────────────────
     const allLines = await db.select({ id: lines.id, phoneNumber: lines.phoneNumber }).from(lines)
-    const phoneToLineId = new Map(allLines.map((l: { phoneNumber: string; id: string }) => [l.phoneNumber.replace(/\D/g, ''), l.id]))
+    const phoneToLineId = new Map(allLines.map((l: { phoneNumber: string; id: string }) => [normalizePhone(l.phoneNumber), l.id]))
 
     const unknownLines: Array<{ phoneNumber: string; label: string | null }> = []
     const lineChargeValues = []

@@ -22,7 +22,7 @@ export const authConfig: NextAuthConfig = {
       // Admin-only routes
       if (
         (pathname.startsWith('/admin') || pathname.startsWith('/api/admin')) &&
-        (auth?.user as any)?.role !== 'admin'
+        auth?.user?.role !== 'admin'
       ) {
         return Response.redirect(new URL('/dashboard', request.url))
       }
@@ -32,10 +32,10 @@ export const authConfig: NextAuthConfig = {
     jwt({ token, user }) {
       if (user) {
         token.id = user.id
-        token.role = (user as any).role
-        token.lineId = (user as any).lineId ?? null
-        token.householdId = (user as any).householdId ?? null
-        token.canSeeHousehold = (user as any).canSeeHousehold ?? false
+        token.role = user.role
+        token.lineId = user.lineId ?? null
+        token.householdId = user.householdId ?? null
+        token.canSeeHousehold = user.canSeeHousehold ?? false
       }
       return token
     },

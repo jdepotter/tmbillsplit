@@ -3,8 +3,13 @@
 import { useRouter } from 'next/navigation'
 import { MONTH_NAMES } from '@/lib/utils/dates'
 import { phoneDisplay } from '@/lib/utils/phone'
+import { initials } from '@/lib/utils/string'
+import { formatCurrency } from '@/lib/utils/currency'
 import { TrendChart, TrendPoint } from '@/components/TrendChart'
 import { DataUsageChart, DataUsagePoint } from '@/components/DataUsageChart'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { StatusPill } from '@/components/ui/StatusPill'
+import { Th } from '@/components/ui/DataTable'
 
 interface LineRow {
   lineId: string
@@ -53,17 +58,12 @@ interface Props {
   maxPeriod: { month: number; year: number } | null
 }
 
-function fmt(val: string | null | undefined) {
-  if (!val) return '$0.00'
-  return `$${parseFloat(val).toFixed(2)}`
+function fmt(v: string | null | undefined) {
+  if (v === null || v === undefined || v === '') return '$0.00'
+  return formatCurrency(v)
 }
 
-function initials(name?: string | null) {
-  if (!name) return '?'
-  return name.split(' ').map((p) => p[0]).join('').toUpperCase().slice(0, 2)
-}
-
-const STATUS_COLORS: Record<string, string> = {
+const STATUS_DOT: Record<string, string> = {
   done: 'var(--green)',
   pending: 'var(--amber)',
   error: 'var(--red)',
@@ -115,12 +115,7 @@ export function AdminDashboardClient({ month, year, view, bill, lineData, recent
 
   return (
     <div>
-      {/* Topbar */}
-      <div className="page-topbar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 28px', borderBottom: '1px solid var(--border)', background: 'var(--bg0)', position: 'sticky', top: 0, zIndex: 10 }}>
-        <div>
-          <div style={{ fontSize: '16px', fontWeight: 600, letterSpacing: '-0.3px' }}>Global Dashboard</div>
-          <div style={{ fontSize: '12px', color: 'var(--text3)', marginTop: '1px' }}>All lines</div>
-        </div>
+      <PageHeader title="Global Dashboard" subtitle="All lines" right={
         <div className="page-topbar-filters" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           {/* View tabs */}
           <div style={{ display: 'flex', background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: '10px', padding: '3px', gap: '2px' }}>
@@ -145,7 +140,7 @@ export function AdminDashboardClient({ month, year, view, bill, lineData, recent
               style={{ background: 'none', border: 'none', color: (view === 'monthly' ? atMax : atMaxYear) ? 'var(--border)' : 'var(--text2)', width: '28px', height: '28px', borderRadius: '7px', cursor: (view === 'monthly' ? atMax : atMaxYear) ? 'default' : 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>›</button>
           </div>
         </div>
-      </div>
+      } />
 
       <div style={{ padding: '24px 28px' }}>
 
@@ -225,11 +220,7 @@ export function AdminDashboardClient({ month, year, view, bill, lineData, recent
                     {lineData.length} active lines{bill ? ` · bill ${bill.parseStatus}` : ' · no bill uploaded'}
                   </div>
                 </div>
-                {bill && (
-                  <span style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '20px', fontWeight: 500, background: bill.parseStatus === 'done' ? 'rgba(34,197,94,0.1)' : 'rgba(245,158,11,0.1)', color: STATUS_COLORS[bill.parseStatus] }}>
-                    {bill.parseStatus.charAt(0).toUpperCase() + bill.parseStatus.slice(1)}
-                  </span>
-                )}
+                {bill && <StatusPill status={bill.parseStatus} />}
               </div>
               {lineData.length === 0 ? (
                 <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text3)', fontSize: '13px' }}>
@@ -293,7 +284,7 @@ export function AdminDashboardClient({ month, year, view, bill, lineData, recent
                     <a key={b.id} href={`/admin/bills/${b.id}`}
                       style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', background: 'var(--bg2)', borderRadius: '8px', textDecoration: 'none' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: STATUS_COLORS[b.parseStatus] }} />
+                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: STATUS_DOT[b.parseStatus] }} />
                         <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text1)' }}>{MONTH_NAMES[b.periodMonth - 1]} {b.periodYear}</span>
                       </div>
                       <span style={{ fontFamily: 'var(--mono)', fontSize: '12px', color: 'var(--text2)' }}>{fmt(b.totalAmount)}</span>

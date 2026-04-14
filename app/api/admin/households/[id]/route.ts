@@ -1,19 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 import { db, households } from '@/lib/db'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 
 const patchSchema = z.object({ name: z.string().min(1) })
 
-async function requireAdmin() {
-  const session = await auth()
-  if (!session || session.user.role !== 'admin') return null
-  return session
-}
-
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  if (!await requireAdmin()) return new NextResponse('Forbidden', { status: 403 })
+  const guard = await requireAdmin()
+  if (guard instanceof NextResponse) return guard
 
   const { id } = await params
   const body = await req.json()
@@ -26,7 +21,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  if (!await requireAdmin()) return new NextResponse('Forbidden', { status: 403 })
+  const guard = await requireAdmin()
+  if (guard instanceof NextResponse) return guard
 
   const { id } = await params
   await db.delete(households).where(eq(households.id, id))

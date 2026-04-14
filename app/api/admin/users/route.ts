@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 import { db, users, lines, households } from '@/lib/db'
 import { eq } from 'drizzle-orm'
 import { hash } from 'bcryptjs'
@@ -16,14 +16,9 @@ const createUserSchema = z.object({
   password: z.string().min(8).optional().nullable(),
 })
 
-async function requireAdmin() {
-  const session = await auth()
-  if (!session || session.user.role !== 'admin') return null
-  return session
-}
-
 export async function GET() {
-  if (!await requireAdmin()) return new NextResponse('Forbidden', { status: 403 })
+  const guard = await requireAdmin()
+  if (guard instanceof NextResponse) return guard
 
   const rows = await db
     .select({
@@ -48,7 +43,8 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  if (!await requireAdmin()) return new NextResponse('Forbidden', { status: 403 })
+  const guard = await requireAdmin()
+  if (guard instanceof NextResponse) return guard
 
   const body = await req.json()
   const parsed = createUserSchema.safeParse(body)

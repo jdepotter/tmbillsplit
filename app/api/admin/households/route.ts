@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 import { db, households } from '@/lib/db'
 import { z } from 'zod'
 
@@ -7,20 +7,16 @@ const createSchema = z.object({
   name: z.string().min(1),
 })
 
-async function requireAdmin() {
-  const session = await auth()
-  if (!session || session.user.role !== 'admin') return null
-  return session
-}
-
 export async function GET() {
-  if (!await requireAdmin()) return new NextResponse('Forbidden', { status: 403 })
+  const guard = await requireAdmin()
+  if (guard instanceof NextResponse) return guard
   const rows = await db.select().from(households).orderBy(households.createdAt)
   return NextResponse.json(rows)
 }
 
 export async function POST(req: NextRequest) {
-  if (!await requireAdmin()) return new NextResponse('Forbidden', { status: 403 })
+  const guard = await requireAdmin()
+  if (guard instanceof NextResponse) return guard
 
   const body = await req.json()
   const parsed = createSchema.safeParse(body)

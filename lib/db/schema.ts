@@ -63,7 +63,7 @@ export const bills = pgTable(
     activeLineCount: integer('active_line_count'),
     planShares: integer('plan_shares'), // null = use activeLineCount; set manually to override
     parseErrors: jsonb('parse_errors'),
-    rawBillData: jsonb('raw_bill_data'), // raw extracted tables from parser
+    rawBillData: jsonb('raw_bill_data').$type<import('@/lib/agents/types').RawBillData | null>(),
   },
   (t) => [unique('bills_period_unique').on(t.periodMonth, t.periodYear)],
 )

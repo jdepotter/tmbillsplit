@@ -2,6 +2,13 @@
 import { DefaultSession } from 'next-auth'
 
 declare module 'next-auth' {
+  interface User {
+    role?: 'user' | 'admin'
+    lineId?: string | null
+    householdId?: string | null
+    canSeeHousehold?: boolean
+  }
+
   interface Session {
     user: DefaultSession['user'] & {
       id: string

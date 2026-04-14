@@ -1,33 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 import { db } from '@/lib/db'
 import { bills } from '@/lib/db/schema'
 import { runOrchestrator } from '@/lib/agents/orchestrator'
-import { putBillPdf } from '@/lib/storage/bill-pdf'
-
-async function requireAdmin() {
-  const session = await auth()
-  if (!session || session.user.role !== 'admin') return null
-  return session
-}
-
-// Parse "SummaryBillJan2026.pdf" → { month: 1, year: 2026 }
-const MONTH_ABBR: Record<string, number> = {
-  jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6,
-  jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12,
-}
-function parseFilename(name: string): { month: number; year: number } | null {
-  const m = name.match(/SummaryBill([A-Za-z]{3})(\d{4})/i)
-  if (!m) return null
-  const month = MONTH_ABBR[m[1].toLowerCase()]
-  const year = parseInt(m[2])
-  if (!month || isNaN(year)) return null
-  return { month, year }
-}
+import { putBillPdf, billPdfKey } from '@/lib/storage/bill-pdf'
+import { parseBillFilename } from '@/lib/utils/dates'
 
 export async function POST(req: NextRequest) {
-  const session = await requireAdmin()
-  if (!session) return new NextResponse('Forbidden', { status: 403 })
+  const guard = await requireAdmin()
+  if (guard instanceof NextResponse) return guard
 
   const formData = await req.formData()
   const file = formData.get('file') as File | null
@@ -37,7 +18,7 @@ export async function POST(req: NextRequest) {
   if (file.type !== 'application/pdf') return NextResponse.json({ error: 'File must be a PDF' }, { status: 400 })
 
   // Try filename detection first, fall back to form fields
-  const detected = parseFilename(file.name)
+  const detected = parseBillFilename(file.name)
   const monthStr = formData.get('month') as string | null
   const yearStr = formData.get('year') as string | null
   const month = detected?.month ?? (monthStr ? parseInt(monthStr) : NaN)
@@ -51,8 +32,7 @@ export async function POST(req: NextRequest) {
   const fileBuffer = await file.arrayBuffer()
   const pdfBase64 = Buffer.from(fileBuffer).toString('base64')
 
-  const blobName = `bills/${year}-${String(month).padStart(2, '0')}.pdf`
-  const rawFileUrl = await putBillPdf(blobName, fileBuffer)
+  const rawFileUrl = await putBillPdf(billPdfKey(year, month), fileBuffer)
 
   // Upsert bill — set planShares before parsing so orchestrator picks it up
   const [bill] = await db
@@ -60,7 +40,7 @@ export async function POST(req: NextRequest) {
     .values({
       periodMonth: month,
       periodYear: year,
-      uploadedBy: session.user.id,
+      uploadedBy: guard.user.id,
       parseStatus: 'pending',
       planShares: planShares && planShares > 0 ? planShares : null,
       rawFileUrl,
@@ -69,7 +49,7 @@ export async function POST(req: NextRequest) {
       target: [bills.periodMonth, bills.periodYear],
       set: {
         parseStatus: 'pending',
-        uploadedBy: session.user.id,
+        uploadedBy: guard.user.id,
         uploadedAt: new Date(),
         planShares: planShares && planShares > 0 ? planShares : null,
         ...(rawFileUrl ? { rawFileUrl } : {}),

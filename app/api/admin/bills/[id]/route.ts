@@ -1,20 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 import { db } from '@/lib/db'
 import { bills } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
 import { runOrchestrator } from '@/lib/agents/orchestrator'
 import { z } from 'zod'
-import { putBillPdf } from '@/lib/storage/bill-pdf'
-
-async function requireAdmin() {
-  const session = await auth()
-  if (!session || session.user.role !== 'admin') return null
-  return session
-}
+import { putBillPdf, billPdfKey } from '@/lib/storage/bill-pdf'
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  if (!await requireAdmin()) return new NextResponse('Forbidden', { status: 403 })
+  const guard = await requireAdmin()
+  if (guard instanceof NextResponse) return guard
   const { id } = await params
   await db.delete(bills).where(eq(bills.id, id))
   return new NextResponse(null, { status: 204 })
@@ -25,7 +20,8 @@ const patchSchema = z.object({
 })
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  if (!await requireAdmin()) return new NextResponse('Forbidden', { status: 403 })
+  const guard = await requireAdmin()
+  if (guard instanceof NextResponse) return guard
   const { id } = await params
   const body = await req.json()
   const parsed = patchSchema.safeParse(body)
@@ -36,8 +32,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 }
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await requireAdmin()
-  if (!session) return new NextResponse('Forbidden', { status: 403 })
+  const guard = await requireAdmin()
+  if (guard instanceof NextResponse) return guard
   const { id } = await params
 
   const [bill] = await db.select().from(bills).where(eq(bills.id, id)).limit(1)
@@ -52,8 +48,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const fileBuffer = await file.arrayBuffer()
   const pdfBase64 = Buffer.from(fileBuffer).toString('base64')
 
-  const blobName = `bills/${bill.periodYear}-${String(bill.periodMonth).padStart(2, '0')}.pdf`
-  const rawFileUrl = await putBillPdf(blobName, fileBuffer)
+  const rawFileUrl = await putBillPdf(billPdfKey(bill.periodYear, bill.periodMonth), fileBuffer)
 
   await db.update(bills).set({ parseStatus: 'pending', rawFileUrl }).where(eq(bills.id, id))
 

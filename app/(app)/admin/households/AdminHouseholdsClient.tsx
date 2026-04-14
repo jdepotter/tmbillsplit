@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { apiRequest } from '@/lib/api/client'
 
 interface Household {
   id: string
@@ -28,28 +30,27 @@ export function AdminHouseholdsClient({ households }: Props) {
     if (!name.trim()) return
     setSaving(true)
     setError(null)
-    const res = await fetch('/api/admin/households', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: name.trim() }),
-    })
-    setSaving(false)
-    if (!res.ok) { setError('Failed to create household'); return }
-    setName('')
-    setShowCreate(false)
-    router.refresh()
+    try {
+      await apiRequest('/api/admin/households', { method: 'POST', json: { name: name.trim() } })
+      setName('')
+      setShowCreate(false)
+      router.refresh()
+    } catch {
+      setError('Failed to create household')
+    } finally {
+      setSaving(false)
+    }
   }
 
   async function rename(id: string) {
     if (!editName.trim()) return
-    const res = await fetch(`/api/admin/households/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: editName.trim() }),
-    })
-    if (!res.ok) return
-    setEditId(null)
-    router.refresh()
+    try {
+      await apiRequest(`/api/admin/households/${id}`, { method: 'PATCH', json: { name: editName.trim() } })
+      setEditId(null)
+      router.refresh()
+    } catch {
+      // ignore
+    }
   }
 
   async function remove(id: string, lineCount: number, userCount: number) {
@@ -58,24 +59,24 @@ export function AdminHouseholdsClient({ households }: Props) {
       ? `This household has ${lineCount} line(s) and ${userCount} user(s). They will be unassigned. Delete anyway?`
       : 'Delete this household?'
     if (!confirm(msg)) return
-    await fetch(`/api/admin/households/${id}`, { method: 'DELETE' })
+    await apiRequest(`/api/admin/households/${id}`, { method: 'DELETE' })
     router.refresh()
   }
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 28px', borderBottom: '1px solid var(--border)', background: 'var(--bg0)', position: 'sticky', top: 0, zIndex: 10 }}>
-        <div>
-          <div style={{ fontSize: '16px', fontWeight: 600, letterSpacing: '-0.3px' }}>Households</div>
-          <div style={{ fontSize: '12px', color: 'var(--text3)', marginTop: '1px' }}>Visibility groups for bill sharing</div>
-        </div>
-        <button
-          onClick={() => { setShowCreate(true); setError(null) }}
-          style={{ background: 'var(--mg)', color: '#fff', border: 'none', borderRadius: '8px', padding: '8px 16px', fontSize: '13px', fontWeight: 500, cursor: 'pointer' }}
-        >
-          + New household
-        </button>
-      </div>
+      <PageHeader
+        title="Households"
+        subtitle="Visibility groups for bill sharing"
+        right={
+          <button
+            onClick={() => { setShowCreate(true); setError(null) }}
+            style={{ background: 'var(--mg)', color: '#fff', border: 'none', borderRadius: '8px', padding: '8px 16px', fontSize: '13px', fontWeight: 500, cursor: 'pointer' }}
+          >
+            + New household
+          </button>
+        }
+      />
 
       <div style={{ padding: '24px 28px' }}>
         {showCreate && (
