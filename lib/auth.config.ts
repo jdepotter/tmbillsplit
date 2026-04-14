@@ -5,6 +5,7 @@ import type { NextAuthConfig } from 'next-auth'
 // This file must stay free of Node.js-only, non-Edge-safe dependencies.
 export const authConfig: NextAuthConfig = {
   providers: [],
+  trustHost: true,
   pages: { signIn: '/login' },
   session: { strategy: 'jwt' },
   callbacks: {
