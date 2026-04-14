@@ -8,7 +8,8 @@
     "start": "next start",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:seed": "tsx lib/db/seed.ts"
+    "db:seed": "tsx lib/db/seed.ts",
+    "blobs:upload": "tsx scripts/upload-bills-to-netlify.ts"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.1",

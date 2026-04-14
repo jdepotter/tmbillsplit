@@ -1,167 +1,174 @@
-# T-Mobile Bill Splitter Dashboard
+# T-Mobile Bill Splitter
 
-Internal tool to upload T‑Mobile PDF bills, parse them with AI, and show a per‑line / per‑household dashboard so everyone can see what they owe.
+A small full-stack web app that ingests T-Mobile PDF bills, extracts and classifies every line item with a multi-agent LLM pipeline, then shows each person on the family plan exactly what they owe.
+
+---
+
+## What it does
+
+- **Admin uploads** the monthly T-Mobile PDF bill (drag-and-drop, multiple files, period auto-detected from filename).
+- A 4-stage agent pipeline parses the PDF, classifies every charge, splits the plan cost fairly, and validates the math.
+- **Each user** sees their own line: plan share, device payment, mid-cycle prorations, taxes, data used, and yearly trend.
+- **Households** (groups of lines paid by one person) get an aggregated household view.
+- **Admins** see a global dashboard across all bills, lines, and households.
 
 ---
 
 ## Stack
 
-- Next.js 16 (App Router, `app/`)
-- TypeScript
-- Drizzle ORM + Postgres
-- Auth.js / NextAuth v5 (credentials)
-- Google Gemini (via `@google/generative-ai`)
+| Layer       | Choice                                                |
+| ----------- | ----------------------------------------------------- |
+| Framework   | Next.js 16 (App Router, React 19, Webpack)            |
+| Language    | TypeScript                                            |
+| Database    | Postgres (Neon serverless) + Drizzle ORM              |
+| Auth        | Auth.js / NextAuth v5 (credentials, JWT sessions)     |
+| AI          | Google Gemini via `@google/generative-ai`             |
+| Blob store  | Netlify Blobs (raw PDFs)                              |
+| Rate limit  | Upstash Redis + Ratelimit                             |
+| Hosting     | Netlify (Next.js runtime via `@netlify/plugin-nextjs`)|
+| Styling     | Plain CSS + Tailwind v4 PostCSS                       |
 
 ---
 
-## Local Development
+## AI usage
+
+### 1. AI as the runtime — bill parsing pipeline
+
+A single PDF goes through four sequential Gemini calls, each with a focused system prompt and JSON-schema-shaped output. Code lives in [`lib/agents/`](lib/agents/) and prompts in [`lib/ai/prompts.ts`](lib/ai/prompts.ts).
+
+```
+PDF (base64)
+  │
+  ▼
+┌──────────────────┐  Extract bill totals, per-line raw charges,
+│ 1. Parser agent  │  data usage, billing period.
+└──────────────────┘  Output: structured JSON.
+  │
+  ▼
+┌──────────────────┐  For each unstructured line item, assign a
+│ 2. Classifier    │  category (plan_share, device_payment,
+└──────────────────┘  international, tax_fee, discount, etc.).
+  │
+  ▼
+┌──────────────────┐  Apply equal-share logic:
+│ 3. Splitter      │   - regular plan cost ÷ active lines
+└──────────────────┘   - mid-cycle/device/one-offs stay on the line
+  │
+  ▼
+┌──────────────────┐  Sanity-check: do per-line totals reconcile
+│ 4. Validator     │  with the bill total within tolerance?
+└──────────────────┘  Emits warnings or fails the bill.
+  │
+  ▼
+DB writes (line_charges) + match phone numbers to known lines.
+Unknown numbers are surfaced back to the admin UI.
+```
+
+Design notes worth flagging for the portfolio reader:
+
+- **Why split into agents instead of one big prompt?** Smaller prompts → tighter JSON adherence, easier to debug, and each stage can fail independently with a useful error. The validator is the safety net that catches LLM math drift.
+- **Determinism via schema, not temperature.** Each agent is asked to emit JSON matching a fixed schema; the orchestrator parses and rejects malformed output rather than relying on low temperature alone.
+- **Re-parse is cheap.** Raw PDFs are kept in Netlify Blobs (key: `bills/YYYY-MM.pdf`), so any prompt change can be replayed against historical bills via the **Re-parse** action without re-uploading.
+- **No AI on the read path.** Dashboards read only validated rows from `line_charges`. The LLM runs at write time only.
+
+### 2. AI as the builder — how this app was made
+
+This codebase was developed by giving high-level intent to **Claude Code** and reviewing/steering its output. Concretely:
+
+- Architecture, schema, agent prompts, route handlers, UI components, and CSS were all drafted by the agent.
+- Human input was mostly: product decisions ("a household is a visibility group, not a billing entity"), corrections ("the queue table doesn't fit, propose a layout"), and reviewing diffs.
+- The Vercel → Netlify migration (blob storage swap, Auth.js `trustHost`, `netlify.toml`) was performed by the agent end-to-end, including writing the data-migration script in [`scripts/upload-bills-to-netlify.ts`](scripts/upload-bills-to-netlify.ts).
+
+The repo intentionally does **not** ship `CLAUDE.md` / `AGENTS.md` — those are local-only steering files for the coding agent.
+
+---
+
+## Local development
 
 ```bash
 npm install
-
-# Dev server (Webpack, Turbopack disabled)
-npm run dev
+npm run dev          # next dev --webpack (Turbopack disabled — known memory issues)
 ```
 
-Then open http://localhost:3000.
+Open <http://localhost:3000>.
 
-Environment variables (see `.env.local.example` if present):
-
-- `DATABASE_URL` – Postgres connection string
-- `AUTH_SECRET` – Auth.js secret
-- `GOOGLE_AI_API_KEY` – Gemini API key
-
-Database:
-
-- Apply migrations: `npm run db:migrate`
-
----
-
-## Deployment
-
-### Build and start
-
-We explicitly use Webpack instead of Turbopack (known memory issues):
+### Required env vars
 
 ```bash
-npm run build   # next build --webpack
-npm start       # next start
+DATABASE_URL=postgres://...           # Neon pooled URL recommended
+AUTH_SECRET=...                       # openssl rand -base64 32
+AUTH_URL=http://localhost:3000        # site URL (required by NextAuth v5)
+GOOGLE_AI_API_KEY=...                 # Gemini API key
 ```
 
-Primary deployment target is **Netlify** (see `netlify.toml` and `@netlify/plugin-nextjs`). PDFs are stored in Netlify Blobs; auth is automatic inside Netlify Functions. You can also deploy to any Node.js host (Fly.io, Render, bare VM). For non-Netlify hosts using the Blobs API, set `NETLIFY_SITE_ID` and `NETLIFY_BLOBS_TOKEN`. Locally, if neither is set, PDFs are written to `public/bills/`.
+Optional:
 
-Minimum recommended instance: 1–2 vCPU, 1–2 GB RAM.
+```bash
+NETLIFY_SITE_ID=...                   # only needed to use Netlify Blobs locally
+NETLIFY_BLOBS_TOKEN=...               # personal access token w/ blobs scope
+UPSTASH_REDIS_REST_URL=...            # for rate limiting
+UPSTASH_REDIS_REST_TOKEN=...
+```
 
-### Required env vars in production
+If `NETLIFY_*` are unset, uploaded PDFs are written to `public/bills/` instead of Netlify Blobs.
 
-Same as local, plus any provider‑specific secrets (Redis, Blob, etc. if you wire them up). At minimum:
+### Database
 
-- `DATABASE_URL`
-- `AUTH_SECRET`
-- `GOOGLE_AI_API_KEY`
-
----
-
-## Bill Upload & Parsing Flow
-
-The core logic lives in:
-
-- `app/(app)/admin/bills/AdminBillsClient.tsx`
-- `app/api/admin/bills/upload/route.ts`
-- `lib/agents/*`
-- `lib/ai/gemini-client.ts`
-
-### 1. Uploading bills (Admin → Bills)
-
-UI:
-
-- Admin goes to **Admin → Bills**.
-- Left card **“Upload bills”** accepts drag‑and‑drop or file picker.
-- Only PDF files are accepted.
-- For each file, we keep a local queue row with:
-	- `month`, `year` (auto‑detected from filename `SummaryBill<Mon><YYYY>` when possible)
-	- `planShares` override (how many shares to split the base plan into)
-
-When the admin clicks **“Parse X bills”**:
-
-1. Each queued file is POSTed to `/api/admin/bills/upload` with multipart form data (`file`, `month`, `year`, optional `planShares`).
-2. The API stores the raw PDF (e.g. blob/storage), inserts a `bills` row with `parseStatus = 'pending'`, then triggers the orchestrator.
-
-### 2. Orchestrator pipeline
-
-Implemented in `lib/agents/orchestrator.ts` as `runOrchestrator(billId, pdfBase64)`.
-
-Steps:
-
-1. **Parser agent** (`runParserAgent`)
-	 - Sends the PDF (base64) + `PARSER_SYSTEM_PROMPT` to Gemini via `geminiWithPdf`.
-	 - Gemini returns a structured JSON object with:
-		 - Bill period (`billingPeriodMonth`, `billingPeriodYear`)
-		 - Totals (`totalAmount`, `planCost`, `regularPlanCost`, `activeLineCount`)
-		 - Per‑line breakdown with `planShare`, `midCycleCost`, `devicePayment`, one‑off charges, taxes/fees, `totalDue`.
-		 - A `rawBillData` section capturing “This bill summary” and per‑line detailed tables.
-	 - The orchestrator updates the `bills` row with period, totals, `activeLineCount`, and `rawBillData`.
-
-2. **Classifier agent** (`runClassifierAgent`)
-	 - Takes the parsed detailed charges and runs them through Gemini again with `CLASSIFIER_SYSTEM_PROMPT`.
-	 - Normalizes each charge into categories like `plan_share`, `device_payment`, `international`, `tax_fee`, etc.
-
-3. **Splitter agent** (`runSplitterAgent`)
-	 - Combines the parser + classifier results.
-	 - Applies the equal‑share logic:
-		 - `regularPlanCost` is divided evenly across active lines.
-		 - Mid‑cycle changes, device payments, one‑off charges, and taxes stay attached to the specific line they appear on.
-	 - Produces per‑line totals:
-
-		 - `planShare`
-		 - `midCycleCharges`
-		 - `devicePayment`
-		 - `extraCharges`
-		 - `taxesFees`
-		 - `discounts`
-		 - `totalDue`
-
-4. **Validator agent** (`runValidatorAgent`)
-	 - Checks that per‑line totals add up to the bill totals within a tolerance.
-	 - Returns `passed: boolean` and a list of warnings.
-	 - If validation fails, the bill is marked `parseStatus = 'error'` with `parseErrors`.
-
-5. **Line matching & DB write**
-	 - All known lines are loaded from `lines` (phone numbers normalized to digits only).
-	 - Each parsed line’s phone number is matched to a `lines.id`.
-	 - Unknown numbers are collected into `unknownLines` (shown back in the UI so the admin can add missing lines).
-	 - For matched lines, rows are written into `line_charges`:
-		 - `planShare`, `midCycleCharges`, `devicePayment`, `extraCharges`, `taxesFees`, `discounts`, `totalDue`, `chargeDetail`.
-	 - Existing `line_charges` for that `billId` are deleted first (re‑parse scenario).
-	 - The bill is updated to `parseStatus = 'done'` and `parseErrors` set to validator warnings (if any).
-
-### 3. Handling unknown lines
-
-- If the parser finds numbers that don’t exist in `lines`, they are returned as `unknownLines` from the upload API.
-- The **Upload bills** card shows a callout listing these phone numbers.
-- Admin should:
-	1. Go to **Admin → Lines**, add the missing lines with correct phone numbers.
-	2. Re‑upload the same bill PDF.
-
-### 4. Re‑parse and delete
-
-- In **Admin → Bills → [bill detail]** (and via actions in **Admin → Bills** list):
-	- **Re‑parse**
-		- Either simple re‑parse (re‑run agents on the existing PDF) or upload a replacement PDF for that bill.
-		- This deletes existing `line_charges` for the bill and re‑runs the full orchestrator.
-	- **Delete**
-		- Deletes the bill and its `line_charges` from the database.
+```bash
+npm run db:migrate          # apply Drizzle migrations
+npm run db:seed             # optional, if you have a local seed file
+```
 
 ---
 
-## Dashboards
+## Deployment (Netlify)
 
-- User dashboard: `app/(app)/dashboard/UserDashboardClient.tsx`
-	- Shows per‑line totals, breakdown, and yearly trends.
-	- Household users can see an aggregated household view.
+The repo is configured for Netlify out of the box via [`netlify.toml`](netlify.toml) and `@netlify/plugin-nextjs`.
 
-- Admin dashboard: `app/(app)/admin/dashboard/AdminDashboardClient.tsx`
-	- Global view across all lines and households.
-	- Surface of recent bills, per‑line totals, and trend chart.
+1. Connect the repo in Netlify; the runtime is auto-detected.
+2. Set env vars in **Site → Configuration → Environment**: `DATABASE_URL`, `AUTH_SECRET`, `AUTH_URL` (your `*.netlify.app` URL), `AUTH_TRUST_HOST=true`, `GOOGLE_AI_API_KEY`, plus Upstash if used.
+3. Inside Netlify Functions, blob auth is automatic — no token needed in prod.
 
-Both dashboards read from `bills` + `line_charges` and never talk directly to the AI; they only consume stored, validated data.
+### Migrating PDFs from another host
+
+Drop existing PDFs into `./netlify_migrate/` (gitignored), then:
+
+```bash
+NETLIFY_SITE_ID=... NETLIFY_BLOBS_TOKEN=... npm run blobs:upload
+```
+
+The script parses `SummaryBill<Mon><YYYY>.pdf` or `YYYY-MM*.pdf` filenames and writes each to the `bills` store under key `bills/YYYY-MM.pdf`.
+
+---
+
+## Project layout
+
+```
+app/
+  (app)/                   authenticated app shell
+    admin/                 admin-only pages (bills, users, lines, households)
+    dashboard/             per-user dashboard
+    profile/
+  (auth)/login/            credentials login
+  api/
+    admin/bills/           upload, re-parse, download, delete bills
+    admin/...              CRUD for users / lines / households
+lib/
+  agents/                  orchestrator + 4 agent stages
+  ai/                      Gemini client + system prompts
+  auth.ts, auth.config.ts  NextAuth v5 setup
+  db/                      Drizzle schema + migrations
+  storage/bill-pdf.ts      Netlify Blobs ↔ local FS abstraction
+  utils/                   dates, phone normalization, data usage helpers
+components/
+  layout/                  AppShell + Sidebar
+  *Chart.tsx               trend / data-usage charts
+scripts/
+  upload-bills-to-netlify.ts   one-shot blob migration
+```
+
+---
+
+## License
+
+Personal project, no license — code is here for portfolio reference.

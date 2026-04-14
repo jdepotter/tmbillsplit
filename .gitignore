@@ -39,6 +39,11 @@ lib/db/seed_data.sql
 # local docs
 doc/
 
+# ai coding-agent instruction files (local only)
+CLAUDE.md
+AGENTS.md
+/netlify_migrate/
+
 # vercel
 .vercel
 
