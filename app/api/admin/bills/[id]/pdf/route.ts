@@ -19,9 +19,10 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   if (!bill) return new NextResponse('Not found', { status: 404 })
   if (!bill.rawFileUrl) return new NextResponse('No PDF stored for this bill', { status: 404 })
 
-  const filename = `bill-${bill.periodYear}-${String(bill.periodMonth).padStart(2, '0')}.pdf`
+  const period = `${bill.periodYear}-${String(bill.periodMonth).padStart(2, '0')}`
+  const filename = `bill-${period}.pdf`
 
-  const pdfBody = await getBillPdf(bill.rawFileUrl)
+  const pdfBody = await getBillPdf(`bills/${period}.pdf`)
   if (!pdfBody) return new NextResponse('Could not fetch stored PDF', { status: 502 })
 
   return new NextResponse(pdfBody, {
