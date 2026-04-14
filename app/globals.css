@@ -57,10 +57,12 @@ body {
 
 .sidebar {
   width: 220px;
+  height: 100%;
 }
 
 .sidebar-desktop {
-  display: block;
+  display: flex;
+  height: 100%;
 }
 
 .mobile-topbar {
@@ -128,7 +130,7 @@ body {
 .bills-grid {
   display: grid;
   gap: 14px;
-  grid-template-columns: 360px 1fr;
+  grid-template-columns: 1fr;
 }
 
 .table-scroll {

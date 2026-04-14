@@ -238,6 +238,7 @@ export function AdminBillsClient({ bills }: Props) {
           </div>
 
           <div style={{ padding: '16px 20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: queue.length > 0 ? '260px 1fr' : '1fr', gap: '14px', alignItems: 'start' }}>
             {/* Drop zone */}
             <div
               onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
@@ -252,7 +253,6 @@ export function AdminBillsClient({ bills }: Props) {
                 cursor: 'pointer',
                 background: dragOver ? 'var(--mg-dim)' : 'transparent',
                 transition: 'all 0.15s',
-                marginBottom: queue.length > 0 ? '14px' : '0',
               }}
             >
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--mg)" strokeWidth="1.5" style={{ margin: '0 auto 6px' }}>
@@ -268,7 +268,7 @@ export function AdminBillsClient({ bills }: Props) {
 
             {/* Queued files — table layout */}
             {queue.length > 0 && (
-              <div>
+              <div style={{ minWidth: 0 }}>
                 {/* Apply-to-all shares */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
                   <span style={{ fontSize: '11px', color: 'var(--text3)', fontWeight: 500 }}>Apply shares to all:</span>
@@ -290,8 +290,8 @@ export function AdminBillsClient({ bills }: Props) {
                     <tr style={{ background: 'var(--bg3)' }}>
                       <th style={{ fontSize: '10px', color: 'var(--text3)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '.4px', padding: '7px 12px', textAlign: 'left' }}>File</th>
                       <th style={{ fontSize: '10px', color: 'var(--text3)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '.4px', padding: '7px 8px', textAlign: 'left', width: '130px' }}>Month</th>
-                      <th style={{ fontSize: '10px', color: 'var(--text3)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '.4px', padding: '7px 8px', textAlign: 'left', width: '72px' }}>Year</th>
-                      <th style={{ fontSize: '10px', color: 'var(--text3)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '.4px', padding: '7px 8px', textAlign: 'left', width: '64px' }}>Shares</th>
+                      <th style={{ fontSize: '10px', color: 'var(--text3)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '.4px', padding: '7px 8px', textAlign: 'left', width: '80px' }}>Year</th>
+                      <th style={{ fontSize: '10px', color: 'var(--text3)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '.4px', padding: '7px 8px', textAlign: 'left', width: '80px' }}>Shares</th>
                       <th style={{ width: '32px' }}></th>
                     </tr>
                   </thead>
@@ -302,7 +302,7 @@ export function AdminBillsClient({ bills }: Props) {
                       return (
                         <tr key={item.id} style={{ borderTop: idx > 0 ? '1px solid var(--border)' : 'none', background: rowBg }}>
                           <td style={{ padding: '7px 12px' }}>
-                            <div style={{ fontSize: '12px', color: 'var(--text1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '160px' }}>{item.file.name}</div>
+                            <div title={item.file.name} style={{ fontSize: '12px', color: 'var(--text1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.file.name}</div>
                             {item.status === 'uploading' && <div style={{ fontSize: '10px', color: 'var(--amber)', marginTop: '1px' }}>Parsing…</div>}
                             {item.status === 'done' && <div style={{ fontSize: '10px', color: 'var(--green)', marginTop: '1px' }}>✓ Done{item.warnings?.length ? ` · ${item.warnings.length} warning${item.warnings.length > 1 ? 's' : ''}` : ''}</div>}
                             {item.status === 'error' && <div style={{ fontSize: '10px', color: 'var(--red)', marginTop: '1px' }}>✗ {item.error}</div>}
@@ -347,21 +347,22 @@ export function AdminBillsClient({ bills }: Props) {
                 </table>
 
                 {/* Action buttons */}
-                <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+                <div style={{ display: 'flex', gap: '8px', marginTop: '10px', justifyContent: 'flex-end' }}>
                   {hasPending && (
                     <button onClick={uploadAll} disabled={isUploading}
-                      style={{ flex: 1, background: 'var(--mg)', color: '#fff', border: 'none', borderRadius: '8px', padding: '9px 0', fontSize: '13px', fontWeight: 600, cursor: isUploading ? 'not-allowed' : 'pointer', opacity: isUploading ? 0.6 : 1 }}>
+                      style={{ background: 'var(--mg)', color: '#fff', border: 'none', borderRadius: '8px', padding: '9px 22px', fontSize: '13px', fontWeight: 600, cursor: isUploading ? 'not-allowed' : 'pointer', opacity: isUploading ? 0.6 : 1 }}>
                       {isUploading ? 'Parsing…' : `Parse ${queue.filter(i => i.status === 'pending').length} bill${queue.filter(i => i.status === 'pending').length > 1 ? 's' : ''}`}
                     </button>
                   )}
                   {hasDone && !hasPending && !isUploading && (
-                    <button onClick={clearDone} style={{ flex: 1, background: 'var(--bg2)', color: 'var(--text2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '9px 0', fontSize: '13px', cursor: 'pointer' }}>
+                    <button onClick={clearDone} style={{ background: 'var(--bg2)', color: 'var(--text2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '9px 22px', fontSize: '13px', cursor: 'pointer' }}>
                       Clear done
                     </button>
                   )}
                 </div>
               </div>
             )}
+            </div>
 
             {/* Unknown lines */}
             {unknownLines.length > 0 && (
