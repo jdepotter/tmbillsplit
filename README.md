@@ -7,7 +7,7 @@ A small full-stack web app that ingests T-Mobile PDF bills, extracts and classif
 ## What it does
 
 - **Admin uploads** the monthly T-Mobile PDF bill (drag-and-drop, multiple files, period auto-detected from filename).
-- A 4-stage agent pipeline parses the PDF, classifies every charge, splits the plan cost fairly, and validates the math.
+- A 4-stage pipeline parses the PDF, classifies every charge, splits the plan cost fairly, and validates the math. The first two stages are LLM calls; the last two are deterministic TypeScript.
 - **Each user** sees their own line: plan share, device payment, mid-cycle prorations, taxes, data used, and yearly trend.
 - **Households** (groups of lines paid by one person) get an aggregated household view.
 - **Admins** see a global dashboard across all bills, lines, and households.
@@ -34,30 +34,30 @@ A small full-stack web app that ingests T-Mobile PDF bills, extracts and classif
 
 ### 1. AI as the runtime — bill parsing pipeline
 
-A single PDF goes through four sequential Gemini calls, each with a focused system prompt and JSON-schema-shaped output. Code lives in [`lib/agents/`](lib/agents/) and prompts in [`lib/ai/prompts.ts`](lib/ai/prompts.ts).
+A single PDF goes through two sequential Gemini calls (parser, classifier), followed by two deterministic TypeScript stages (splitter, validator). Each LLM call has a focused system prompt and JSON-schema-shaped output. Code lives in [`lib/agents/`](lib/agents/) and prompts in [`lib/ai/prompts.ts`](lib/ai/prompts.ts).
 
 ```
 PDF (base64)
   │
   ▼
-┌──────────────────┐  Extract bill totals, per-line raw charges,
-│ 1. Parser agent  │  data usage, billing period.
-└──────────────────┘  Output: structured JSON.
+┌────────────────────────┐  Extract bill totals, per-line raw charges,
+│ 1. Parser  (Gemini)    │  data usage, billing period.
+└────────────────────────┘  Output: structured JSON.
   │
   ▼
-┌──────────────────┐  For each unstructured line item, assign a
-│ 2. Classifier    │  category (plan_share, device_payment,
-└──────────────────┘  international, tax_fee, discount, etc.).
+┌────────────────────────┐  For each unstructured line item, assign a
+│ 2. Classifier (Gemini) │  category (plan_share, device_payment,
+└────────────────────────┘  international, tax_fee, discount, etc.).
   │
   ▼
-┌──────────────────┐  Apply equal-share logic:
-│ 3. Splitter      │   - regular plan cost ÷ active lines
-└──────────────────┘   - mid-cycle/device/one-offs stay on the line
+┌────────────────────────┐  Apply equal-share logic:
+│ 3. Splitter  (pure TS) │   - regular plan cost ÷ active lines
+└────────────────────────┘   - mid-cycle/device/one-offs stay on the line
   │
   ▼
-┌──────────────────┐  Sanity-check: do per-line totals reconcile
-│ 4. Validator     │  with the bill total within tolerance?
-└──────────────────┘  Emits warnings or fails the bill.
+┌────────────────────────┐  Sanity-check: do per-line totals reconcile
+│ 4. Validator (pure TS) │  with the bill total within tolerance?
+└────────────────────────┘  Emits warnings or fails the bill.
   │
   ▼
 DB writes (line_charges) + match phone numbers to known lines.
@@ -66,8 +66,9 @@ Unknown numbers are surfaced back to the admin UI.
 
 Design notes worth flagging for the portfolio reader:
 
-- **Why split into agents instead of one big prompt?** Smaller prompts → tighter JSON adherence, easier to debug, and each stage can fail independently with a useful error. The validator is the safety net that catches LLM math drift.
-- **Determinism via schema, not temperature.** Each agent is asked to emit JSON matching a fixed schema; the orchestrator parses and rejects malformed output rather than relying on low temperature alone.
+- **Why only two LLM stages?** The LLM is only used where it earns its keep: reading unstructured PDF text (parser) and categorising free-form charge descriptions (classifier). Once data is structured, splitting and validating are plain arithmetic — no reason to pay an LLM to do math it might get wrong.
+- **Why split into two LLM calls instead of one big prompt?** Smaller prompts → tighter JSON adherence, easier to debug, and each stage can fail independently with a useful error. The validator is the deterministic safety net that catches LLM drift.
+- **Determinism via schema, not temperature.** Each LLM agent is asked to emit JSON matching a fixed schema; the orchestrator parses and rejects malformed output rather than relying on low temperature alone. Parser and classifier are each retried once on transient failure.
 - **Re-parse is cheap.** Raw PDFs are kept in Netlify Blobs (key: `bills/YYYY-MM.pdf`), so any prompt change can be replayed against historical bills via the **Re-parse** action without re-uploading.
 - **No AI on the read path.** Dashboards read only validated rows from `line_charges`. The LLM runs at write time only.
 
@@ -154,7 +155,7 @@ app/
     admin/bills/           upload, re-parse, download, delete bills
     admin/...              CRUD for users / lines / households
 lib/
-  agents/                  orchestrator + 4 agent stages
+  agents/                  orchestrator + 4 stages (2 LLM, 2 deterministic)
   ai/                      Gemini client + system prompts
   auth.ts, auth.config.ts  NextAuth v5 setup
   db/                      Drizzle schema + migrations
