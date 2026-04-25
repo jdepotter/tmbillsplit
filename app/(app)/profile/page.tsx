@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth'
 import { db, users, lines, households } from '@/lib/db'
 import { eq } from 'drizzle-orm'
+import { redirect } from 'next/navigation'
 import { ProfileClient } from './ProfileClient'
 import { phoneDisplay } from '@/lib/utils/phone'
 
@@ -13,6 +14,10 @@ export default async function ProfilePage() {
     .from(users)
     .where(eq(users.id, session.user.id))
     .limit(1)
+
+  // Session JWT references a user that no longer exists (e.g. deleted, DB reset).
+  // Bounce to login so NextAuth can clear the cookie and the user can re-auth.
+  if (!user) redirect('/login')
 
   const linePhone = user.lineId
     ? (await db.select({ phoneNumber: lines.phoneNumber }).from(lines).where(eq(lines.id, user.lineId)).limit(1))[0]?.phoneNumber
