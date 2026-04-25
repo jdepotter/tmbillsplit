@@ -7,6 +7,10 @@ export function billPdfKey(periodYear: number, periodMonth: number): string {
 }
 
 function useNetlifyBlobs() {
+  // In production we always use Netlify Blobs. The local FS branch is dev-only:
+  // /var/task on Lambda is read-only, and process.env.NETLIFY is not reliably
+  // set in the Next.js runtime — so detect by NODE_ENV instead.
+  if (process.env.NODE_ENV === 'production') return true
   return Boolean(process.env.NETLIFY || process.env.NETLIFY_BLOBS_TOKEN)
 }
 

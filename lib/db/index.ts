@@ -22,6 +22,29 @@ function createDb() {
 // which quickly exhausts Postgres connections. Cache the db on globalThis.
 const globalForDb = globalThis as unknown as { _tmDb?: ReturnType<typeof createDb> }
 
-export const db = globalForDb._tmDb ?? (globalForDb._tmDb = createDb())
+function getDb(): ReturnType<typeof createDb> {
+  return globalForDb._tmDb ?? (globalForDb._tmDb = createDb())
+}
+
+// Lazy proxy so importing this module does not connect to the database.
+// Next's build-time page-data collection imports route modules; we want
+// connection (and the DATABASE_URL check) to happen on first real use.
+export const db = new Proxy({} as ReturnType<typeof createDb>, {
+  get(_target, prop, receiver) {
+    return Reflect.get(getDb() as object, prop, receiver)
+  },
+  has(_target, prop) {
+    return Reflect.has(getDb() as object, prop)
+  },
+  ownKeys() {
+    return Reflect.ownKeys(getDb() as object)
+  },
+  getOwnPropertyDescriptor(_target, prop) {
+    return Reflect.getOwnPropertyDescriptor(getDb() as object, prop)
+  },
+  getPrototypeOf() {
+    return Reflect.getPrototypeOf(getDb() as object)
+  },
+})
 
 export * from './schema'
