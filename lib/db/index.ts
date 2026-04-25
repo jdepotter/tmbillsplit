@@ -1,7 +1,8 @@
 import * as schema from './schema'
 
 function createDb() {
-  const url = (process.env.PROD_DATABASE_URL ?? process.env.DATABASE_URL)!
+  const url = process.env.DATABASE_URL
+  if (!url) throw new Error('DATABASE_URL is not set')
   // Neon serverless URLs contain "neon.tech" — use the HTTP driver there.
   // Everything else (local Docker, etc.) uses the standard postgres driver.
   if (url.includes('neon.tech')) {
