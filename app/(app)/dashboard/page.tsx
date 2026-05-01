@@ -15,9 +15,13 @@ export default async function UserDashboardPage({ searchParams }: Props) {
   const session = await auth()
   if (!session) return null
 
+  // Default to previous month: T-Mobile's bill for month N isn't available
+  // until partway through month N+1, so the current month rarely has data.
   const now = new Date()
-  const month = params.month ? parseInt(params.month) : now.getMonth() + 1
-  const year = params.year ? parseInt(params.year) : now.getFullYear()
+  const defaultMonth = now.getMonth() === 0 ? 12 : now.getMonth()
+  const defaultYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear()
+  const month = params.month ? parseInt(params.month) : defaultMonth
+  const year = params.year ? parseInt(params.year) : defaultYear
   const view = (params.view ?? 'monthly') as 'monthly' | 'yearly'
 
   const isAdmin = session.user.role === 'admin'
