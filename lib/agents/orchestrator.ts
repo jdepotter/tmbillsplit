@@ -31,7 +31,7 @@ export async function runOrchestrator(
     try {
       parserOutput = await runParserAgent(pdfBase64)
     } catch (e) {
-      console.error('[orchestrator] Parser failed on first attempt for bill', billId, '— retrying. Error:', e)
+      // Retry once on transient failure
       parserOutput = await runParserAgent(pdfBase64)
     }
 
@@ -66,7 +66,6 @@ export async function runOrchestrator(
     try {
       classifierOutput = await runClassifierAgent(parserOutput)
     } catch (e) {
-      console.error('[orchestrator] Classifier failed on first attempt for bill', billId, '— retrying. Error:', e)
       classifierOutput = await runClassifierAgent(parserOutput)
     }
 
@@ -118,7 +117,6 @@ export async function runOrchestrator(
     // ── 4. Validator ───────────────────────────────────────────────────────────
     const validatorOutput = runValidatorAgent(splitterOutput, parserOutput)
     if (!validatorOutput.passed) {
-      console.error('[orchestrator] Validator failed for bill', billId, 'errors:', validatorOutput.errors)
       return fail(validatorOutput.errors)
     }
 
@@ -184,7 +182,6 @@ export async function runOrchestrator(
       parserOutput,
     }
   } catch (err) {
-    console.error('[orchestrator] Unexpected error for bill', billId, err)
     const message = err instanceof Error ? err.message : String(err)
     return fail([`Unexpected error: ${message}`])
   }
