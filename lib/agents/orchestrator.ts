@@ -21,12 +21,15 @@ export async function runOrchestrator(
     return { success: false, billId, errors }
   }
 
+  console.log('[orchestrator] start bill', billId, 'pdf bytes:', pdfBase64.length)
+  const t0 = Date.now()
   try {
     // Load bill to get planShares override
     const [bill] = await db.select({ planShares: bills.planShares }).from(bills).where(eq(bills.id, billId)).limit(1)
     const planSharesOverride = bill?.planShares ?? null
 
     // ── 1. Parser ──────────────────────────────────────────────────────────────
+    console.log('[orchestrator] calling parser (gemini PDF)…')
     let parserOutput
     try {
       parserOutput = await runParserAgent(pdfBase64)
@@ -34,6 +37,7 @@ export async function runOrchestrator(
       console.error('[orchestrator] Parser failed on first attempt for bill', billId, '— retrying. Error:', e)
       parserOutput = await runParserAgent(pdfBase64)
     }
+    console.log('[orchestrator] parser done in', Date.now() - t0, 'ms — lines:', parserOutput.lines.length)
 
     // Debug: log extracted lineDataUsage from rawBillData to verify per-line usage
     try {
@@ -62,6 +66,7 @@ export async function runOrchestrator(
       .where(eq(bills.id, billId))
 
     // ── 2. Classifier ──────────────────────────────────────────────────────────
+    console.log('[orchestrator] calling classifier…')
     let classifierOutput
     try {
       classifierOutput = await runClassifierAgent(parserOutput)
@@ -69,8 +74,10 @@ export async function runOrchestrator(
       console.error('[orchestrator] Classifier failed on first attempt for bill', billId, '— retrying. Error:', e)
       classifierOutput = await runClassifierAgent(parserOutput)
     }
+    console.log('[orchestrator] classifier done in', Date.now() - t0, 'ms')
 
     // ── 3. Splitter ────────────────────────────────────────────────────────────
+    console.log('[orchestrator] running splitter…')
     const splitterOutput = runSplitterAgent(
       classifierOutput,
       parserOutput,
@@ -116,11 +123,13 @@ export async function runOrchestrator(
     }
 
     // ── 4. Validator ───────────────────────────────────────────────────────────
+    console.log('[orchestrator] running validator…')
     const validatorOutput = runValidatorAgent(splitterOutput, parserOutput)
     if (!validatorOutput.passed) {
       console.error('[orchestrator] Validator failed for bill', billId, 'errors:', validatorOutput.errors)
       return fail(validatorOutput.errors)
     }
+    console.log('[orchestrator] validator passed, warnings:', validatorOutput.warnings.length)
 
     // ── 5. Match parsed phone numbers to DB line IDs ───────────────────────────
     const allLines = await db.select({ id: lines.id, phoneNumber: lines.phoneNumber }).from(lines)
@@ -162,6 +171,7 @@ export async function runOrchestrator(
     }
 
     // ── 6. Write to DB ────────────────────────────────────────────────────────
+    console.log('[orchestrator] writing', lineChargeValues.length, 'line_charges, unknown:', unknownLines.length)
     if (lineChargeValues.length > 0) {
       // Remove any existing line_charges for this bill (re-parse scenario)
       await db.delete(lineCharges).where(eq(lineCharges.billId, billId))
@@ -175,6 +185,7 @@ export async function runOrchestrator(
         parseErrors: validatorOutput.warnings.length > 0 ? validatorOutput.warnings : null,
       })
       .where(eq(bills.id, billId))
+    console.log('[orchestrator] DONE bill', billId, 'in', Date.now() - t0, 'ms')
 
     return {
       success: true,
