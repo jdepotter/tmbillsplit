@@ -9,7 +9,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "tsx lib/db/seed.ts",
-    "blobs:upload": "tsx scripts/upload-bills-to-netlify.ts"
+    "blobs:upload": "tsx scripts/upload-bills-to-netlify.ts",
+    "reset-password": "tsx --env-file=.env.local scripts/reset-password.ts"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.1",

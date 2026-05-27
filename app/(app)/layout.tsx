@@ -9,6 +9,16 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const session = await auth()
   if (!session) redirect('/login')
 
+  // JWT may reference a user that no longer exists (deleted, DB reset). Force
+  // sign-out so the cookie clears, otherwise downstream DB writes that FK to
+  // users.id will fail and the user stays stuck in a broken session.
+  const [dbUser] = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.id, session.user.id))
+    .limit(1)
+  if (!dbUser) redirect('/logout')
+
   let allLines: Array<{ id: string; phoneNumber: string; label: string | null; userName: string | null }> = []
 
   if (session.user.role === 'admin') {

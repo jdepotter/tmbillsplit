@@ -60,6 +60,7 @@ export async function POST(req: NextRequest) {
   const result = await runOrchestrator(bill.id, pdfBase64)
 
   if (!result.success) {
+    console.error('[bills/upload] Parse failed for bill', bill.id, 'errors:', result.errors)
     return NextResponse.json({ error: 'Parse failed', details: result.errors }, { status: 422 })
   }
 

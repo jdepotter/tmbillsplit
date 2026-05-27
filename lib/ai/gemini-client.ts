@@ -1,10 +1,11 @@
 import { GoogleGenerativeAI, Part } from '@google/generative-ai'
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!)
+const MODEL = process.env.GEMINI_MODEL ?? 'gemini-2.5-flash'
 
 export async function geminiText(prompt: string, systemPrompt?: string): Promise<string> {
   const model = genAI.getGenerativeModel({
-    model: 'gemini-3.1-flash-lite-preview',
+    model: MODEL,
     ...(systemPrompt ? { systemInstruction: systemPrompt } : {}),
   })
   const result = await model.generateContent({
@@ -16,7 +17,7 @@ export async function geminiText(prompt: string, systemPrompt?: string): Promise
 
 export async function geminiWithPdf(pdfBase64: string, prompt: string, systemPrompt?: string): Promise<string> {
   const model = genAI.getGenerativeModel({
-    model: 'gemini-3.1-flash-lite-preview',
+    model: MODEL,
     ...(systemPrompt ? { systemInstruction: systemPrompt } : {}),
   })
   const parts: Part[] = [
