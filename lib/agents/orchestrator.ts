@@ -29,14 +29,9 @@ export async function runOrchestrator(
     const planSharesOverride = bill?.planShares ?? null
 
     // ── 1. Parser ──────────────────────────────────────────────────────────────
+    // Retries on transient errors (503/429) are handled inside gemini-client.
     console.log('[orchestrator] calling parser (gemini PDF)…')
-    let parserOutput
-    try {
-      parserOutput = await runParserAgent(pdfBase64)
-    } catch (e) {
-      console.error('[orchestrator] Parser failed on first attempt for bill', billId, '— retrying. Error:', e)
-      parserOutput = await runParserAgent(pdfBase64)
-    }
+    const parserOutput = await runParserAgent(pdfBase64)
     console.log('[orchestrator] parser done in', Date.now() - t0, 'ms — lines:', parserOutput.lines.length)
 
     // Debug: log extracted lineDataUsage from rawBillData to verify per-line usage
@@ -67,13 +62,7 @@ export async function runOrchestrator(
 
     // ── 2. Classifier ──────────────────────────────────────────────────────────
     console.log('[orchestrator] calling classifier…')
-    let classifierOutput
-    try {
-      classifierOutput = await runClassifierAgent(parserOutput)
-    } catch (e) {
-      console.error('[orchestrator] Classifier failed on first attempt for bill', billId, '— retrying. Error:', e)
-      classifierOutput = await runClassifierAgent(parserOutput)
-    }
+    const classifierOutput = await runClassifierAgent(parserOutput)
     console.log('[orchestrator] classifier done in', Date.now() - t0, 'ms')
 
     // ── 3. Splitter ────────────────────────────────────────────────────────────

@@ -3,10 +3,13 @@ import { db } from '@/lib/db'
 import { bills } from '@/lib/db/schema'
 import { desc } from 'drizzle-orm'
 import { AdminBillsClient } from './AdminBillsClient'
+import { sweepStalePendingBills } from '@/lib/db/sweep-stale-bills'
 
 export default async function AdminBillsPage() {
   const session = await auth()
   if (!session || session.user.role !== 'admin') return null
+
+  await sweepStalePendingBills()
 
   const allBills = await db
     .select()
