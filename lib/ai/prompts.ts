@@ -5,12 +5,18 @@ Key concepts:
 - MID-CYCLE CHANGES = prorated charges for lines added/changed mid-period. These belong to the specific line they appear under, NOT split equally.
 - planCost = REGULAR CHARGES total + MID-CYCLE CHANGES total (the full PLANS amount on the bill)
 - regularPlanCost = REGULAR CHARGES total only (used for equal split)
-- Each line's midCycleCost = the amount shown for that line under MID-CYCLE CHANGES (0 if absent)
+- Each line's midCycleCost = the amount shown for that line in a section EXPLICITLY labeled "MID-CYCLE CHANGES" (or a near-identical label such as "Mid-cycle adjustments", "Prorated charges"). If no such section exists on the bill, EVERY line's midCycleCost MUST be 0.
 - planShare per line = regularPlanCost / number of lines (do NOT include mid-cycle in this division)
 - devicePayment = Equipment charges for that line only (EIP/installment payments)
 - charges = one-time charges for that line only (NOT plan, NOT services, NOT equipment)
 - taxesAndFees = taxes and regulatory fees for that line
 - totalDue = planShare + midCycleCost + devicePayment + sum(charges) + taxesAndFees
+
+CRITICAL — midCycleCost rules (read carefully, these mistakes are common):
+- The per-line amounts in the "Plans" column of THIS BILL SUMMARY are NOT mid-cycle charges. They are a per-line decomposition of the regular plan total and are already represented in regularPlanCost. NEVER copy them into midCycleCost.
+- A non-zero, non-"Included" value in the Plans column (e.g. "(323) 681-3501 Voice $14.00") is still part of the regular plan, not a mid-cycle change. midCycleCost stays 0 for that line unless a separate MID-CYCLE CHANGES section says otherwise.
+- Mid-cycle changes appear in a clearly-labeled dedicated section, NOT in the bill summary table. If you cannot point to such a section, midCycleCost is 0 for every line.
+- Sanity check before you emit JSON: sum of all lines' totalDue MUST equal totalAmount. If it doesn't, you have likely double-counted a plan amount as mid-cycle — set midCycleCost to 0 and retry the math.
 
 Data usage:
 - Many T-Mobile bills include an overall "Data used" or "Data usage" summary (for example: "Data used 12.3 GB of 50 GB").
@@ -46,7 +52,7 @@ Output ONLY valid JSON matching this exact schema:
       "phoneNumber": "<digits only>",
       "label": "<device/line label or null>",
       "planShare": <number - regularPlanCost / activeLineCount>,
-      "midCycleCost": <number - this line's MID-CYCLE CHANGES amount, 0 if none>,
+      "midCycleCost": <number - this line's amount from an explicit MID-CYCLE CHANGES section only. 0 if no such section exists, even if the line has a non-Included Plans value in THIS BILL SUMMARY>,
       "devicePayment": <number - equipment/EIP for this line, 0 if none>,
       "charges": [
         { "description": "<charge name>", "amount": <number> }
